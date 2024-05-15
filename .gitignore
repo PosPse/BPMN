@@ -1,5 +1,6 @@
 # 忽略以下文件
 *.zip
+*.rar
 *.pt
 *.torch
 *.tar.gz
@@ -9,6 +10,7 @@ regen-main/
 RL4LMs-main/
 NER/model/stanford-corenlp-4.5.5/
 NER/model/bert-base-uncased/
+EasyGNN/venv
 
 !/NER/package/en_core_web_sm-3.7.1.tar.gz
 !/NER/package/pytorch-crf-0.7.2.tar.gz
