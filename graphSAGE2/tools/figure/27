@@ -1,0 +1,17 @@
+digraph 27 {
+	1 [label="The Police Report related to the car accident is searched within the Police Report database and put in a file together with the Claim Documentation" shape=polygon]
+	2 [label="This file serves as input to a claims handler who calculates an initial claim estimate" shape=polygon]
+	3 [label="the claims handler creates an Action Plan based on an Action Plan Checklist available in the Document Management system" shape=polygon]
+	4 [label="a claims manager tries to negotiate a settlement on the claim estimate" shape=polygon]
+	5 [label="The claimant is informed of the outcome" shape=polygon]
+	6 [label="which ends the process" shape=polygon]
+	0 [label="" color="#00FF00" shape=circle style=filled]
+	7 [label="" color="#FF8C00" shape=circle style=filled]
+	0 -> 1 [color="#272727"]
+	1 -> 2 [color="#272727"]
+	2 -> 3 [color="#272727"]
+	3 -> 4 [color="#272727"]
+	4 -> 5 [color="#272727"]
+	5 -> 6 [color="#272727"]
+	6 -> 7 [color="#272727"]
+}
