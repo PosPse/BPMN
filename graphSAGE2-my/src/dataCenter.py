@@ -70,7 +70,7 @@ class DataCenter(object):
 		rate = self.weight_calculate(train_indexs, val_indexs, self.total_data)
 		setattr(self, 'rate', rate)
 		print("训练数据加载完毕")
-
+		print(self.total_data)
 
 	def _split_data(self):
 		"""划分数据集：
