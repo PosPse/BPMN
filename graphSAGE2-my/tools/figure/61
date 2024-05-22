@@ -1,0 +1,18 @@
+digraph 61 {
+	1 [label="The MSPN sents a dismissal to the MSPO" shape=polygon]
+	2 [label="The MSPO reviews the dismissal" shape=polygon]
+	3 [label="The MSPO rejects the dismissal of the MSPN" shape=polygon]
+	4 [label="The MSPO confirms the dismissal of the MSPN" shape=polygon]
+	0 [label="" color="#00FF00" shape=circle style=filled]
+	5 [label="" color="#FF8C00" shape=circle style=filled]
+	before1 [label=X shape=diamond]
+	after1 [label=X shape=diamond]
+	before1 -> 3 [color="#272727"]
+	before1 -> 4 [color="#272727"]
+	2 -> before1 [color="#272727"]
+	after1 -> 5 [color="#272727"]
+	0 -> 1 [color="#272727"]
+	1 -> 2 [color="#272727"]
+	3 -> after1 [color="#272727"]
+	4 -> after1 [color="#272727"]
+}

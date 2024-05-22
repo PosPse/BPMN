@@ -1,0 +1,13 @@
+digraph 60 {
+	1 [label="The MPON requests a device takeover bid of the MPOO" shape=polygon]
+	2 [label="The MPOO sends a tender for the equipment takeover to the MPON" shape=polygon]
+	3 [label="The MPON places an order at the MPOO" shape=polygon]
+	4 [label="The MPOO confirms the order of the MPON and sends the master data" shape=polygon]
+	0 [label="" color="#00FF00" shape=circle style=filled]
+	5 [label="" color="#FF8C00" shape=circle style=filled]
+	0 -> 1 [color="#272727"]
+	1 -> 2 [color="#272727"]
+	2 -> 3 [color="#272727"]
+	3 -> 4 [color="#272727"]
+	4 -> 5 [color="#272727"]
+}

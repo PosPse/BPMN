@@ -1,0 +1,15 @@
+digraph 53 {
+	1 [label="In November of each year , the Coordination Unit at the Town Planning Authority drafts a schedule of meetings for the next calendar year and adds draft dates to all calendars" shape=polygon]
+	2 [label="The Support Officer then checks the dates and suggests modifications" shape=polygon]
+	3 [label="The Coordination Unit then rechecks all dates and looks for potential conflicts" shape=polygon]
+	4 [label="The final schedule of meeting dates is sent to all the independent Committee Members by email" shape=polygon]
+	5 [label="The independent Committee then check their diaries and advise the Coordination Unit of any conflicts" shape=polygon]
+	begin [label="" color="#00FF00" shape=circle style=filled]
+	end [label="" color="#FF8C00" shape=circle style=filled]
+	1 -> 2 [color="#272727"]
+	2 -> 3 [color="#272727"]
+	3 -> 4 [color="#272727"]
+	4 -> 5 [color="#272727"]
+	begin -> 1 [color="#272727"]
+	5 -> end [color="#272727"]
+}

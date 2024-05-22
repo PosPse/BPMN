@@ -1,0 +1,17 @@
+digraph 45 {
+	1 [label="The process starts periodically on the first of each month" shape=polygon]
+	2 [label="Assembler AG places an order with the supplier in order to request more product parts" shape=polygon]
+	3 [label="Assembler AG sends the order to the supplier" shape=polygon]
+	4 [label="The supplier processes the order" shape=polygon]
+	5 [label="The supplier sends an invoice to Assembler AG" shape=polygon]
+	6 [label="Assembler AG receives the invoice" shape=polygon]
+	begin [label="" color="#00FF00" shape=circle style=filled]
+	end [label="" color="#FF8C00" shape=circle style=filled]
+	1 -> 2 [color="#272727"]
+	2 -> 3 [color="#272727"]
+	3 -> 4 [color="#272727"]
+	4 -> 5 [color="#272727"]
+	5 -> 6 [color="#272727"]
+	begin -> 1 [color="#272727"]
+	6 -> end [color="#272727"]
+}

@@ -1,0 +1,18 @@
+digraph 57 {
+	1 [label="The MPON sends the dismissal to the MPOO" shape=polygon]
+	2 [label="The MPOO reviews the dismissal" shape=polygon]
+	3 [label="The MPOO opposes the dismissal of MPON" shape=polygon]
+	4 [label="the MPOO confirms the dismissal of the MPON" shape=polygon]
+	0 [label="" color="#00FF00" shape=circle style=filled]
+	5 [label="" color="#FF8C00" shape=circle style=filled]
+	before1 [label=X shape=diamond]
+	after1 [label=X shape=diamond]
+	before1 -> 3 [color="#272727"]
+	before1 -> 4 [color="#272727"]
+	2 -> before1 [color="#272727"]
+	after1 -> 5 [color="#272727"]
+	0 -> 1 [color="#272727"]
+	1 -> 2 [color="#272727"]
+	3 -> after1 [color="#272727"]
+	4 -> after1 [color="#272727"]
+}
