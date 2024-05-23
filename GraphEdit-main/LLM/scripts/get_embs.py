@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 import sys
-sys.path.append("/xxx/xxx/LLM")
+sys.path.append("/home/btr/bpmn/GraphEdit-main/LLM")
 
 from transformers import AutoTokenizer
 from graphedit.model.GraphEdit import GraphEditForCausalLM
