@@ -23,10 +23,10 @@ import os
 from typing import Dict, Optional, Sequence, List
 
 import sys
-sys.path.append("/xxx/xxx/LLM")
-sys.path.append("/xxx/xxx/LLM/graphedit/model")
+sys.path.append("/home/btr/bpmn/GraphEdit-main/LLM")
+sys.path.append("/home/btr/bpmn/GraphEdit-main/LLM/graphedit/model")
 
-from GraphEdit import GraphEditForCausalLM
+from graphedit.model.GraphEdit import GraphEditForCausalLM
 from GraphEdit_trainer import GraphEditTrainer
 
 from deepspeed import zero

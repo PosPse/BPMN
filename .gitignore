@@ -4,6 +4,7 @@
 *.pt
 *.torch
 *.tar.gz
+*.pyc
 .idea/
 rust/
 regen-main/

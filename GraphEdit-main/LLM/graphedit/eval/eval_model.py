@@ -7,7 +7,7 @@ import json
 import ray
 import sys
 import os.path as osp
-sys.path.append("/xxx/xxx/LLM")
+sys.path.append("/home/btr/bpmn/GraphEdit-main/LLM")
 
 from graphedit.model.GraphEdit import GraphEditForCausalLM
 from graphedit.conversation import SeparatorStyle, get_conv_template
