@@ -10,3 +10,23 @@ edge_index = torch.tensor([[0, 1, 1, 2],
 x = torch.tensor([[-1, 0, 1], [0, 1, 2], [1, 2, 3]], dtype=torch.float)
 dataset_cora = mydata(x=x, edge_index=edge_index)
 print(dataset_cora)
+[
+            "B-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "I-activity",
+            "punctuation",
+            "B-signal",
+            "B-condition",
+            "I-condition",
+            "I-condition",
+            "I-condition",
+            "I-condition",
+            "I-condition"
+            ]
