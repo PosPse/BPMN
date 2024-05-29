@@ -16,6 +16,8 @@ AIHomework/实验四/dataset
 AIHomework/dataset
 GraphEdit-main/GNN/datasets
 model/
+GraphEdit-main/LLM/scripts/*_model
+llmsage/cora
 
 !/NER/package/en_core_web_sm-3.7.1.tar.gz
 !/NER/package/pytorch-crf-0.7.2.tar.gz

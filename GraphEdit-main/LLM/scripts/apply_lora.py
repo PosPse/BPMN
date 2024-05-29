@@ -1,8 +1,6 @@
 import torch
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
- 
- 
 def apply_lora(model_name_or_path, output_path, lora_path):
     print(f"Loading the base model from {model_name_or_path}")
     base = AutoModelForCausalLM.from_pretrained(
@@ -26,8 +24,8 @@ def apply_lora(model_name_or_path, output_path, lora_path):
     base_tokenizer.save_pretrained(output_path)
 
 if __name__ == "__main__":
-    model_name_or_path = './vicuna_7b_v1.5_16k/'
+    model_name_or_path = '/home/btr/bpmn/model/bin/vicuna-7b-v1.5-16k/'
     output_path = './vicuna_7b_pubmed/'
-    lora_path = './Pubmed_model/'
+    lora_path = '/home/btr/bpmn/GraphEdit-main/LLM/scripts/Pubmed_model'
 
     apply_lora(model_name_or_path, output_path, lora_path)
