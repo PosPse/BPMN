@@ -1,0 +1,1 @@
+data_center = DataCenter(data_dir='./data/', vocab_dir='./vocab/', embedding_size=300, vocab_len=10000)
