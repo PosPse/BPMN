@@ -19,6 +19,8 @@ GraphEdit-main/GNN/datasets
 model/
 GraphEdit-main/LLM/scripts/*_model
 llmsage/cora
+AIHomework/final_work/Images
+AIHomework/final_work/captions.txt
 
 !/NER/package/en_core_web_sm-3.7.1.tar.gz
 !/NER/package/pytorch-crf-0.7.2.tar.gz
