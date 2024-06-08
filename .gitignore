@@ -13,8 +13,6 @@ RL4LMs-main/
 NER/model/stanford-corenlp-4.5.5/
 NER/model/bert-base-uncased/
 EasyGNN/venv
-AIHomework/实验四/dataset
-AIHomework/dataset
 GraphEdit-main/GNN/datasets
 model/
 GraphEdit-main/LLM/scripts/*_model
