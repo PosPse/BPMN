@@ -1,7 +1,9 @@
 import torch
+import json
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
-import json
+from torch_geometric.loader import DataLoader
+from get_embs import Tokenizer
 
 class Data(Data):
     def __init__(self, x, edge_index, edge_attr=None, y=None, pos=None, time=None, raw_data=None, **kwargs):
@@ -18,27 +20,124 @@ class Dataset(Dataset):
     
     def __len__(self):
         return len(self.dataset)
-    
+
+class RawData():
+    def __init__(self, raw_data:dict) -> None:
+        self.filename:str = raw_data['filename']
+        self.token:list[str] = raw_data['token']
+        self.bio_label:list[str] = raw_data['bio_label']
+        self.text:str = raw_data['text']
+        self.relation:str = raw_data['relation']
+        self.data_2_mask:list[str] = raw_data['data_2_mask']
+        self.signal_token_list:list[str] = raw_data['signal_token_list']
+        self.data_2_mask_single_signal:list[str] = raw_data['data_2_mask_single_signal']
+        self.signal_token_llm_list:list[str] = raw_data['signal_token_llm_list']
+        self.data_2_mask_single_signal_llm:list[str] = raw_data['data_2_mask_single_signal_llm']
+
+    def __str__(self) -> str:
+        return f'''filename: {self.filename}\n
+token: {self.token}\n
+bio_label: {self.bio_label}\n
+text: {self.text}\n
+relation: {self.relation}\n
+data_2_mask: {self.data_2_mask}\n
+signal_tokrn_list: {self.signal_token_list}\n
+data_2_mask_single_signal: {self.data_2_mask_single_signal}\n
+signal_token_llm_list: {self.signal_token_llm_list}\n
+data_2_mask_single_signal_llm: {self.data_2_mask_single_signal_llm}\n'''
 
 class DataCenter():
     def __init__(self, datasets_json:str, vocab_dir:str, vocab_len:int, embedding_size:int) -> None:
-        self.__datasets_json = datasets_json
-        self.vocab_dir = vocab_dir
-        self.vocab_len = vocab_len
-        self.embedding_size = embedding_size
-        self.datasets_list = None
+        '''
+            datasets_json: str, 数据集json文件路径
+            vocab_dir: str, 词表路径
+            vocab_len: int, 词表长度
+            embedding_size: int, 词向量维度
+        '''
+        self.__datasets_json:str = datasets_json
+        self.__vocab_dir:str = vocab_dir
+        self.__vocab_len:int = vocab_len
+        self.__embedding_size:int = embedding_size
+        self.__datasets_list:list[dict] = None
+        self.__datasets_RawData_list:list[RawData] = None
+        self.__tokenizer:Tokenizer = Tokenizer(self.__vocab_dir, self.__vocab_len, self.__embedding_size)
         self.__init_params()
 
     def __init_params(self):
+        '''
+            初始化参数
+            读取数据集json文件，并将数据集json文件中每一个数据转换为RawData对象
+        '''
         with open(self.__datasets_json, 'r') as f:
-            self.datasets_list = json.load(f)
-        # self.tokenizer = Tokenizer(self.vocab_dir, self.vocab_len)
-        # self.tokenizer.load_vocab()
-        # self.tokenizer.load_embedding()
-        # self.tokenizer.load_embedding_matrix()
-        # self.tokenizer.load_embedding_matrix_2()
-
-    def get_dataloader(self):
+            self.__datasets_list = json.load(f)
+            self.__datasets_RawData_list = [RawData(raw_data) for raw_data in self.__datasets_list]
+            
+    def __generate_dataset(self) -> Dataset:
+        '''
+            生成数据集
+        '''
+        dataset = []
+        for raw_data in self.__datasets_RawData_list:
+            x = self.__tokenizer.token2embedding(raw_data.data_2_mask_single_signal_llm)
+            edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
+            edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+            
+            data = Data(x=x, edge_index=edge_index, raw_data=raw_data)
+            dataset.append(data)
+        return dataset
+    def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
+        '''
+            生成邻接矩阵
+            data_2_mask_single_signal_llm: list[str], 数据集数据
+        '''
+        cur_tokens = data_2_mask_single_signal_llm
+        cur_no_activity = []
+        last_activity = -1
+        cur_adj_lists = []
+        for j in range(0, len(cur_tokens)):
+            if cur_tokens[j] != '[activity]':
+                cur_no_activity.append(j)
+                if last_activity != -1:
+                    cur_adj_lists.append([last_activity, j])
+                    cur_adj_lists.append([j, last_activity])
+                    # cur_adj_lists[last_activity].add(j)
+                    # cur_adj_lists[j].add(last_activity)
+            elif cur_tokens[j] == '[activity]' and len(cur_no_activity) != 0:
+                for k in cur_no_activity:
+                    cur_adj_lists.append([k, j])
+                    cur_adj_lists.append([j, k])
+                    # cur_adj_lists[k].add(j)
+                    # cur_adj_lists[j].add(k)
+                last_activity = j
+                cur_no_activity = []
+            elif cur_tokens[j] == '[activity]' and len(cur_no_activity) == 0:
+                #两个activity直接相连的时候，或许可以考虑在中间加个什么标识
+                if last_activity != -1:
+                    cur_adj_lists.append([last_activity, j])
+                    cur_adj_lists.append([j, last_activity])
+                    # cur_adj_lists[last_activity].add(j)
+                    # cur_adj_lists[j].add(last_activity)
+                last_activity = j
+        return cur_adj_lists
+    
+    def __generate_y(self, data_2_mask_single_signal_llm:list[str]) -> list[int]:
         pass
+    def get_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
+        '''
+            返回DataLoader
+            batch_size: 批大小
+            shuffle: 是否打乱
+        '''
+        dataset = self.__generate_dataset()
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
+import Parser
+if __name__ == '__main__':
+    args = Parser.args
+    data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
+    dataloader = data_center.get_dataloader(args.batch_size, args.shuffle)
+    for batch in dataloader:
+        print(batch.raw_data[0].filename)
+        print(batch.raw_data[0])
+        break
     

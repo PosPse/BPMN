@@ -346,7 +346,8 @@ class DataCenter(object):
 					]
 		"""
 		for i in range(0,len(total_data)):
-			cur_tokens = total_data[i][1]
+			# cur_tokens = total_data[i][1]
+			cur_tokens = ['[activity]', 'when', '[activity]', 'once', '[activity]', '[activity]', '[activity]', 'if', '[condition]', '[activity]', 'if', '[condition]', '[activity]', 'if', '[condition]', '[activity]', 'if', '[condition]', '[activity]']
 			cur_no_activity = []
 			last_activity = -1
 			cur_adj_lists = defaultdict(set)
