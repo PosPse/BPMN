@@ -4,10 +4,23 @@ from torch.utils.data import Dataset
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from get_embs import Tokenizer
+from enum import Enum
 
+class NodeType(Enum):
+    Activity = 0
+    Condition = 1
+    Sign_Successor = 2
+    Sign_Selection = 3
+    Sign_Parallel = 4
+    Sign_Loop = 5
+
+class EdgeType(Enum):
+    pass
+
+from torch_geometric.data import Data
 class Data(Data):
-    def __init__(self, x, edge_index, edge_attr=None, y=None, pos=None, time=None, raw_data=None, **kwargs):
-        super(Data, self).__init__(x, edge_index, y, edge_attr, pos, time, **kwargs)
+    def __init__(self, x, edge_index, y=None, edge_attr=None, pos=None, time=None, raw_data=None, **kwargs):
+        super(Data, self).__init__(x, edge_index, edge_attr, y, pos, time, **kwargs)
         self.raw_data = raw_data
     
 class Dataset(Dataset):
@@ -35,7 +48,7 @@ class RawData():
         self.data_2_mask_single_signal_llm:list[str] = raw_data['data_2_mask_single_signal_llm']
 
     def __str__(self) -> str:
-        return f'''filename: {self.filename}\n
+        return f'''\nfilename: {self.filename}\n
 token: {self.token}\n
 bio_label: {self.bio_label}\n
 text: {self.text}\n
@@ -81,8 +94,9 @@ class DataCenter():
             x = self.__tokenizer.token2embedding(raw_data.data_2_mask_single_signal_llm)
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
-            
-            data = Data(x=x, edge_index=edge_index, raw_data=raw_data)
+            y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
+            y = torch.tensor(y, dtype=torch.float)
+            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
             dataset.append(data)
         return dataset
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -121,7 +135,22 @@ class DataCenter():
         return cur_adj_lists
     
     def __generate_y(self, data_2_mask_single_signal_llm:list[str]) -> list[int]:
-        pass
+        def get_y_category(token:str) -> int:
+            if token == '[activity]':
+                return NodeType.Activity.value
+            elif token == '[condition]':
+                return NodeType.Condition.value
+            elif token == '[sign-successor]':
+                return NodeType.Sign_Successor.value
+            elif token == '[sign-selection]':
+                return NodeType.Sign_Selection.value
+            elif token == '[sign-parallel]':
+                return NodeType.Sign_Parallel.value
+            elif token == '[sign-loop]':
+                return NodeType.Sign_Loop.value
+            else:
+                raise Exception(f'{token} is not in [activity, condition, sign-successor, sign-selection, sign-parallel, sign-loop]')
+        return [get_y_category(token) for token in data_2_mask_single_signal_llm]
     def get_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
             返回DataLoader
@@ -137,6 +166,7 @@ if __name__ == '__main__':
     data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
     dataloader = data_center.get_dataloader(args.batch_size, args.shuffle)
     for batch in dataloader:
+        print(batch)
         print(batch.raw_data[0].filename)
         print(batch.raw_data[0])
         break
