@@ -9,4 +9,12 @@ parser.add_argument("--embedding_size", type=int, default="128", help="词向量
 parser.add_argument("--datasets_json", type=str, default="/home/btr/bpmn/llmsage/my-data/datasets3.json", help="JSON格式的数据集路径")
 parser.add_argument("--batch_size", type=int, default="1", help="批量大小")
 parser.add_argument("--shuffle", type=bool, default="True", help="是否打乱数据")
+
+parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
+parser.add_argument("--num_classes", type=int, default="6", help="分类数量")
+parser.add_argument("--aggr", type=str, default="mean", help="聚合函数")
+
+
+parser.add_argument("--lr", type=float, default="0.000001", help="学习率")
+parser.add_argument("--epochs", type=int, default="50", help="训练轮数")
 args = parser.parse_args()

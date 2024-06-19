@@ -74,6 +74,7 @@ class DataCenter():
         self.__datasets_list:list[dict] = None
         self.__datasets_RawData_list:list[RawData] = None
         self.__tokenizer:Tokenizer = Tokenizer(self.__vocab_dir, self.__vocab_len, self.__embedding_size)
+        self.__datasets = None
         self.__init_params()
 
     def __init_params(self):
@@ -84,6 +85,7 @@ class DataCenter():
         with open(self.__datasets_json, 'r') as f:
             self.__datasets_list = json.load(f)
             self.__datasets_RawData_list = [RawData(raw_data) for raw_data in self.__datasets_list]
+            self.__datasets = self.__generate_dataset()
             
     def __generate_dataset(self) -> Dataset:
         '''
@@ -95,7 +97,7 @@ class DataCenter():
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
-            y = torch.tensor(y, dtype=torch.float)
+            y = torch.tensor(y, dtype=torch.long)
             data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
             dataset.append(data)
         return dataset
@@ -132,6 +134,7 @@ class DataCenter():
                     # cur_adj_lists[last_activity].add(j)
                     # cur_adj_lists[j].add(last_activity)
                 last_activity = j
+        cur_adj_lists = sorted(cur_adj_lists, key=lambda x: x[1])
         return cur_adj_lists
     
     def __generate_y(self, data_2_mask_single_signal_llm:list[str]) -> list[int]:
@@ -150,24 +153,30 @@ class DataCenter():
                 return NodeType.Sign_Loop.value
             else:
                 raise Exception(f'{token} is not in [activity, condition, sign-successor, sign-selection, sign-parallel, sign-loop]')
-        return [get_y_category(token) for token in data_2_mask_single_signal_llm]
-    def get_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
+        y = [get_y_category(token) for token in data_2_mask_single_signal_llm]
+        return y
+    def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
-            返回DataLoader
+            返回训练集DataLoader
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__generate_dataset()
+        dataset = self.__datasets[:51]
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-
+    
+    def get_test_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
+        '''
+            返回测试集DataLoader
+            batch_size: 批大小
+            shuffle: 是否打乱
+        '''
+        dataset = self.__datasets[51:]
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 import Parser
 if __name__ == '__main__':
     args = Parser.args
     data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
-    dataloader = data_center.get_dataloader(args.batch_size, args.shuffle)
-    for batch in dataloader:
-        print(batch)
-        print(batch.raw_data[0].filename)
-        print(batch.raw_data[0])
-        break
+    tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
+    test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
+    print(len(test_dataloader))
     
