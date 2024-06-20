@@ -12,9 +12,9 @@ parser.add_argument("--shuffle", type=bool, default="True", help="是否打乱�
 
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--num_classes", type=int, default="6", help="分类数量")
-parser.add_argument("--aggr", type=str, default="mean", help="聚合函数")
+parser.add_argument("--aggr", type=str, default="lstm", help="聚合函数")
 
 
-parser.add_argument("--lr", type=float, default="0.000001", help="学习率")
-parser.add_argument("--epochs", type=int, default="50", help="训练轮数")
+parser.add_argument("--lr", type=float, default="0.0001", help="学习率")
+parser.add_argument("--epochs", type=int, default="200", help="训练轮数")
 args = parser.parse_args()

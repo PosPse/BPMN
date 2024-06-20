@@ -32,7 +32,9 @@ class GraphSage(nn.Module):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = F.relu(x)
-        x = self.conv2(x, edge_index)
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index) 
+        x = F.dropout(x, training=self.training)
         x = F.relu(x)
         x = self.conv3(x, edge_index)
         return x

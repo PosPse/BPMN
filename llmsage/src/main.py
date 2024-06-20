@@ -12,7 +12,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 data_center = DataCenter(datasets_json=args.datasets_json, vocab_dir=args.vocab_dir, vocab_len=args.vocab_len, embedding_size=args.embedding_size)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
-test_dataloader = data_center.get_test_dataloader(17, args.shuffle)
+test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
 # gcn_model = GCN(embedding_size=args.embedding_size, hidden_size=args.hidden_size, num_classes=args.num_classes).to(device)
 gcn_model = GraphSage(embedding_size=args.embedding_size, hidden_size=args.hidden_size, num_classes=args.num_classes, aggr=args.aggr).to(device)
 optimizer = torch.optim.SGD(gcn_model.parameters(), lr=args.lr)

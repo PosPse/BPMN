@@ -5,6 +5,7 @@ from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from get_embs import Tokenizer
 from enum import Enum
+from torch_geometric.data import Data
 
 class NodeType(Enum):
     Activity = 0
@@ -17,11 +18,12 @@ class NodeType(Enum):
 class EdgeType(Enum):
     pass
 
-from torch_geometric.data import Data
+
 class Data(Data):
-    def __init__(self, x, edge_index, y=None, edge_attr=None, pos=None, time=None, raw_data=None, **kwargs):
+    def __init__(self, x, edge_index, y=None, edge_attr=None, pos=None, time=None, raw_data=None, edge_y=None, **kwargs):
         super(Data, self).__init__(x, edge_index, edge_attr, y, pos, time, **kwargs)
         self.raw_data = raw_data
+        self.edge_y = edge_y
     
 class Dataset(Dataset):
     def __add__(self, dataset):
@@ -97,8 +99,9 @@ class DataCenter():
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
+            edge_y = self.__generate_edge_y(edge_index=edge_index, y=y)
             y = torch.tensor(y, dtype=torch.long)
-            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
+            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return dataset
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -155,6 +158,17 @@ class DataCenter():
                 raise Exception(f'{token} is not in [activity, condition, sign-successor, sign-selection, sign-parallel, sign-loop]')
         y = [get_y_category(token) for token in data_2_mask_single_signal_llm]
         return y
+    
+    def __generate_edge_y(self, edge_index, y):
+        '''
+            生成边标签
+            edge_index: 边索引
+            y: 节点标签
+        '''
+        def get_edge_y_category(edge_index, y):
+            edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5],[2,2],[2,3],[2,4],[2,5],[3,3],[3,4],[3,5],[4,4],[4,5],[5,5]]
+            
+
     def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
             返回训练集DataLoader
