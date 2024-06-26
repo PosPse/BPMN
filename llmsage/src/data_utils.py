@@ -97,10 +97,14 @@ class DataCenter():
         for raw_data in self.__datasets_RawData_list:
             x = self.__tokenizer.token2embedding(raw_data.data_2_mask_single_signal_llm)
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
-            edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
-            edge_y = self.__generate_edge_y(edge_index=edge_index, y=y)
+            num_nodes = len(raw_data.data_2_mask_single_signal_llm)
+            edge_y = self.__generate_edge_y(edge_index=edge_index, num_nodes=num_nodes, y=y)
+            
+            edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
+            edge_y = torch.tensor(edge_y, dtype=torch.long)
+            
             data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return dataset
@@ -159,16 +163,27 @@ class DataCenter():
         y = [get_y_category(token) for token in data_2_mask_single_signal_llm]
         return y
     
-    def __generate_edge_y(self, edge_index, y):
+    def __generate_edge_y(self, edge_index:list[list[int]], num_nodes:int, y:list[int]) -> list[list[int]]:
         '''
             生成边标签
             edge_index: 边索引
             y: 节点标签
         '''
-        def get_edge_y_category(edge_index, y):
+        def get_edge_y_category(node_i_type:int, node_j_type:int) -> int:
             edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5],[2,2],[2,3],[2,4],[2,5],[3,3],[3,4],[3,5],[4,4],[4,5],[5,5]]
-            
-
+            edge = [node_i_type, node_j_type]
+            edge.sort()
+            return edge_map.index(edge) + 1
+        
+        edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
+        for node_i, node_j in edge_index:
+            node_i_type = y[node_i]
+            node_j_type = y[node_j]
+            edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
+            edge_y[node_i][node_j] = edge_i_j_type
+            edge_y[node_j][node_i] = edge_i_j_type
+        return edge_y
+                
     def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
             返回训练集DataLoader

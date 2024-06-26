@@ -39,3 +39,8 @@ class GraphSage(nn.Module):
         x = self.conv3(x, edge_index)
         return x
 
+class EdgeClassification(nn.Module):
+    def __init__(self, embedding_size=128, hidden_size=64, num_classes=6):
+        super(EdgeClassification, self).__init__()
+        
+
