@@ -16,7 +16,7 @@ EasyGNN/venv
 GraphEdit-main/GNN/datasets
 model/
 GraphEdit-main/LLM/scripts/*_model
-llmsage/cora
+LLMEnG/cora
 AIHomework/final_work/Images
 AIHomework/final_work/captions.txt
 

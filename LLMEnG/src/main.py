@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/home/btr/bpmn/llmsage/src')
+sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
 from data_utils import DataCenter
 from model import GCN, GraphSage

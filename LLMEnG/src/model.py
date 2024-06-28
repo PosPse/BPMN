@@ -40,11 +40,23 @@ class GraphSage(nn.Module):
         return x
     
 class NodeFusion(nn.Module):
-    def __init__(self, ):
+    def __init__(self, fusion_method='concat'):
         super(NodeFusion, self).__init__()
+        self.fusion_method = fusion_method
+        self.linear_src = nn.Linear(64, 64) 
+        self.linear_dst = nn.Linear(64, 64)
+    def forward(self, src_node, dst_node):
+        if self.fusion_method == 'concat':
+            return self.concat(src_node, dst_node)
+
+    def concat(self, src_node, dst_node):
+        src_node = self.linear_src(src_node)
+        dst_node = self.linear_dst(dst_node)
+        return torch.cat((src_node, dst_node), dim=1)
 
 class EdgeClassification(nn.Module):
     def __init__(self, embedding_size, edge_num_classes=21):
         super(EdgeClassification, self).__init__()
+        self.linear = nn.Linear(embedding_size, edge_num_classes)
         
 
