@@ -11,7 +11,7 @@ parser.add_argument("--batch_size", type=int, default="1", help="批量大小")
 parser.add_argument("--shuffle", type=bool, default="True", help="是否打乱数据")
 
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
-parser.add_argument("--num_classes", type=int, default="6", help="分类数量")
+parser.add_argument("--node_num_classes", type=int, default="6", help="节点分类数量")
 parser.add_argument("--aggr", type=str, default="lstm", help="聚合函数")
 
 

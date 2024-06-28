@@ -25,3 +25,31 @@ Below is the above business process text in the diagram for the node information
 
 ##Task
 Determine whether node 1 and node 3 have directly connected edges based on the node information in the graph for the business process text and the service process text, and give a reason.
+
+下面是一段描述业务流程的文字。我将根据这段文字绘制相应的流程图。
+The credit company receives the credit information from the customer , If the requested amount is greater than 1M $  an approval must be requested. If the requested amount is lower or equal to 1M $ the company assess the risk of the credit . After the assessment , if the risk is high , an approval must be requested ; but if the risk is low the credit is accepted . After the approval request , the credit could be accepted or rejected ; in both cases , an email is sent to the customer .
+
+下面是上述业务流程文本在图中对于的节点信息：
+0: The credit company receives the credit information from the customer
+1: If
+2: the requested amount is greater than 1M $
+3: an approval must be requested
+4: If
+5: the requested amount is lower or equal to 1M $
+6: the company assess the risk of the credit
+7: After
+8: the assessment
+9: if
+10: the risk is high
+11: an approval must be requested
+12: but if
+13: the risk is low
+14: the credit is accepted
+15: After
+16: the approval request
+17: the credit could be accepted or rejected
+18: in both cases
+19: an email is sent to the customer
+
+##任务
+根据业务流程文本和务流程文本在图中对于的节点信息判断节点1和节点3是否存在直接相连的边，并给出理由。
