@@ -5,10 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python 调试程序: 当前文件",
+            "name": "LLMEnG",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/graphSAGE2/src/main.py",
+            "program": "${workspaceFolder}/LLMEnG/src/main.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "graphSAGE2-my",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/graphSAGE2-my/src/main.py",
             "console": "integratedTerminal"
         }
     ]

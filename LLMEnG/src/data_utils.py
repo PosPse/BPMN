@@ -6,6 +6,7 @@ from torch_geometric.loader import DataLoader
 from get_embs import Tokenizer
 from enum import Enum
 from torch_geometric.data import Data
+from torch_sparse import SparseTensor
 
 class NodeType(Enum):
     Activity = 0
@@ -26,7 +27,7 @@ class Data(Data):
         self.edge_y = edge_y
     
 class Dataset(Dataset):
-    def __add__(self, dataset):
+    def __init__(self, dataset):
         super(Dataset, self).__init__()
         self.dataset = dataset
 
@@ -49,17 +50,17 @@ class RawData():
         self.signal_token_llm_list:list[str] = raw_data['signal_token_llm_list']
         self.data_2_mask_single_signal_llm:list[str] = raw_data['data_2_mask_single_signal_llm']
 
-    def __str__(self) -> str:
-        return f'''\nfilename: {self.filename}\n
-token: {self.token}\n
-bio_label: {self.bio_label}\n
-text: {self.text}\n
-relation: {self.relation}\n
-data_2_mask: {self.data_2_mask}\n
-signal_tokrn_list: {self.signal_token_list}\n
-data_2_mask_single_signal: {self.data_2_mask_single_signal}\n
-signal_token_llm_list: {self.signal_token_llm_list}\n
-data_2_mask_single_signal_llm: {self.data_2_mask_single_signal_llm}\n'''
+#     def __str__(self) -> str:
+#         return f'''\nfilename: {self.filename}\n
+# token: {self.token}\n
+# bio_label: {self.bio_label}\n
+# text: {self.text}\n
+# relation: {self.relation}\n
+# data_2_mask: {self.data_2_mask}\n
+# signal_tokrn_list: {self.signal_token_list}\n
+# data_2_mask_single_signal: {self.data_2_mask_single_signal}\n
+# signal_token_llm_list: {self.signal_token_llm_list}\n
+# data_2_mask_single_signal_llm: {self.data_2_mask_single_signal_llm}\n'''
 
 class DataCenter():
     def __init__(self, datasets_json:str, vocab_dir:str, vocab_len:int, embedding_size:int) -> None:
@@ -104,10 +105,11 @@ class DataCenter():
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
             edge_y = torch.tensor(edge_y, dtype=torch.long)
-            
+            edge_y = SparseTensor.from_dense(edge_y)
+
             data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
-        return dataset
+        return Dataset(dataset)
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
         '''
             生成邻接矩阵
@@ -190,7 +192,7 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[:51]
+        dataset = self.__datasets[:50]
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def get_test_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
@@ -199,7 +201,7 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[51:]
+        dataset = self.__datasets[50:]
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 import Parser
 if __name__ == '__main__':
@@ -207,5 +209,9 @@ if __name__ == '__main__':
     data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-    print(len(test_dataloader))
+    for batch_data in tarin_dataloader:
+        print(batch_data)
+        print(len(tarin_dataloader))
+        print(len(test_dataloader))
+        break
     
