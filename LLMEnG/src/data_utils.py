@@ -19,12 +19,11 @@ class NodeType(Enum):
 class EdgeType(Enum):
     pass
 
-
-class Data(Data):
-    def __init__(self, x, edge_index, y=None, edge_attr=None, pos=None, time=None, raw_data=None, edge_y=None, **kwargs):
-        super(Data, self).__init__(x, edge_index, edge_attr, y, pos, time, **kwargs)
-        self.raw_data = raw_data
-        self.edge_y = edge_y
+# class Data(Data):
+#     def __init__(self, x, edge_index, edge_attr=None, y=None, pos=None, time=None, raw_data=None, edge_y=None, **kwargs):
+#         super(Data, self).__init__(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y, pos=pos, time=time, **kwargs)
+#         self.raw_data = raw_data
+#         self.edge_y = edge_y
     
 class Dataset(Dataset):
     def __init__(self, dataset):
@@ -49,6 +48,7 @@ class RawData():
         self.data_2_mask_single_signal:list[str] = raw_data['data_2_mask_single_signal']
         self.signal_token_llm_list:list[str] = raw_data['signal_token_llm_list']
         self.data_2_mask_single_signal_llm:list[str] = raw_data['data_2_mask_single_signal_llm']
+        self.edge_y = None
 
 #     def __str__(self) -> str:
 #         return f'''\nfilename: {self.filename}\n
@@ -105,9 +105,9 @@ class DataCenter():
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
             edge_y = torch.tensor(edge_y, dtype=torch.long)
-            edge_y = SparseTensor.from_dense(edge_y)
-
-            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
+            # edge_y = SparseTensor.from_dense(edge_y)
+            raw_data.edge_y = edge_y
+            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
             dataset.append(data)
         return Dataset(dataset)
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -210,8 +210,10 @@ if __name__ == '__main__':
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in tarin_dataloader:
-        print(batch_data)
-        print(len(tarin_dataloader))
-        print(len(test_dataloader))
+        unique_batch_indices = torch.unique(batch_data.batch)
+        for batch_index in unique_batch_indices:
+            subgraph = batch_data.get_example(batch_index)
+            print(subgraph.raw_data.edge_y.shape)
+        # print(batch_data.edge_y.to_dense())
         break
     

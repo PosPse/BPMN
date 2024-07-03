@@ -22,13 +22,13 @@ class GCN(nn.Module):
         return x
     
 class GraphSage(nn.Module):
-    def __init__(self, embedding_size=128, hidden_size=64, node_num_classes=6, aggr='mean'):
+    def __init__(self, embedding_size=128, hidden_size=128, node_num_classes=6, aggr='mean'):
         super(GraphSage, self).__init__()
         self.conv1 = SAGEConv(embedding_size, hidden_size, aggr)
         self.conv2 = SAGEConv(hidden_size, hidden_size, aggr)
         self.conv3 = SAGEConv(hidden_size, node_num_classes, aggr)
 
-    def forward(self, data):
+    def forward(self, data, use_last_layer=True):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = F.relu(x)
@@ -36,15 +36,16 @@ class GraphSage(nn.Module):
         x = self.conv2(x, edge_index) 
         x = F.dropout(x, training=self.training)
         x = F.relu(x)
-        x = self.conv3(x, edge_index)
+        if use_last_layer:
+            x = self.conv3(x, edge_index)
         return x
     
 class NodeFusion(nn.Module):
     def __init__(self, fusion_method='concat'):
         super(NodeFusion, self).__init__()
         self.fusion_method = fusion_method
-        self.linear_src = nn.Linear(64, 64) 
-        self.linear_dst = nn.Linear(64, 64)
+        self.linear_src = nn.Linear(128, 64) 
+        self.linear_dst = nn.Linear(128, 64)
     def forward(self, src_node, dst_node):
         if self.fusion_method == 'concat':
             return self.concat(src_node, dst_node)
@@ -55,8 +56,30 @@ class NodeFusion(nn.Module):
         return torch.cat((src_node, dst_node), dim=1)
 
 class EdgeClassification(nn.Module):
-    def __init__(self, embedding_size, edge_num_classes=21):
+    def __init__(self, node_fusion, edge_num_classes=21):
         super(EdgeClassification, self).__init__()
-        self.linear = nn.Linear(embedding_size, edge_num_classes)
+        self.node_fusion = node_fusion
+        self.linear_src = nn.Linear(128, edge_num_classes)
+        
+
+    def forward(self, node_embedding, data):
+        res = []
+        x, edge_index = data.x, data.edge_index
+        for node_i in range(data.num_nodes):
+            for node_j in range(data.num_nodes):
+                src_node = node_embedding[node_i]
+                src_node = src_node.reshape(1, -1)
+                dst_node = node_embedding[node_j]
+                dst_node = dst_node.reshape(1, -1)
+                fused_node = self.node_fusion(src_node, dst_node)
+                edge_feature = self.linear_src(fused_node)
+                res.append(edge_feature)
+
+        res = torch.cat(res, dim=0)
+        return res
+                
+
+
+        
         
 
