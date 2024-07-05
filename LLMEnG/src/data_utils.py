@@ -106,8 +106,8 @@ class DataCenter():
             y = torch.tensor(y, dtype=torch.long)
             edge_y = torch.tensor(edge_y, dtype=torch.long)
             # edge_y = SparseTensor.from_dense(edge_y)
-            raw_data.edge_y = edge_y
-            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
+            # raw_data.edge_y = edge_y
+            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return Dataset(dataset)
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -177,13 +177,20 @@ class DataCenter():
             edge.sort()
             return edge_map.index(edge) + 1
         
-        edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
+        # edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
+        # for node_i, node_j in edge_index:
+        #     node_i_type = y[node_i]
+        #     node_j_type = y[node_j]
+        #     edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
+        #     edge_y[node_i][node_j] = edge_i_j_type
+        #     edge_y[node_j][node_i] = edge_i_j_type
+        # return edge_y
+        edge_y = []
         for node_i, node_j in edge_index:
             node_i_type = y[node_i]
             node_j_type = y[node_j]
             edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
-            edge_y[node_i][node_j] = edge_i_j_type
-            edge_y[node_j][node_i] = edge_i_j_type
+            edge_y.append(edge_i_j_type)
         return edge_y
                 
     def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
@@ -209,11 +216,9 @@ if __name__ == '__main__':
     data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-    for batch_data in tarin_dataloader:
-        unique_batch_indices = torch.unique(batch_data.batch)
-        for batch_index in unique_batch_indices:
-            subgraph = batch_data.get_example(batch_index)
-            print(subgraph.raw_data.edge_y.shape)
-        # print(batch_data.edge_y.to_dense())
-        break
+    for batch_data in test_dataloader:
+            unique_batch_indices = torch.unique(batch_data.batch)
+            for batch_index in unique_batch_indices:
+                subgraph = batch_data.get_example(batch_index)
+                print(subgraph)
     
