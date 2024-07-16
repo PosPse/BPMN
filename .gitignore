@@ -8,6 +8,7 @@
 .idea/
 rust/
 cpp/
+rust/
 regen-main/
 RL4LMs-main/
 NER/model/stanford-corenlp-4.5.5/
