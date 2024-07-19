@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.nn import SAGEConv
+from torch_geometric.nn import GATConv
 
 class GCN(nn.Module):
     def __init__(self, embedding_size=128, hidden_size=64, node_num_classes=6):
@@ -40,6 +41,21 @@ class GraphSage(nn.Module):
             x = self.conv3(x, edge_index)
         return x
     
+class GAT(nn.Module):
+    def __init__(self, embedding_size=128, hidden_size=64, node_num_classes=6, heads=1):
+        super(GAT, self).__init__()
+        self.conv1 = GATConv(embedding_size, hidden_size, heads)
+        self.conv2 = GATConv(hidden_size*heads, node_num_classes, heads=1)
+    
+    def forward(self, data, use_last_layer=True):
+        x, edge_index = data.x, data.edge_index
+        x = self.conv1(x, edge_index)
+        x = F.elu(x)
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index)
+        # x = F.log_softmax(x, dim=1)
+        return x
+    
 class NodeFusion(nn.Module):
     def __init__(self, fusion_method='concat'):
         super(NodeFusion, self).__init__()
@@ -65,7 +81,7 @@ class EdgeClassification(nn.Module):
     def forward(self, node_embedding, data):
         res = []
         x, edge_index = data.x, data.edge_index
-        # for node_i in range(data.num_nodes):
+        # for node_i in range(data.num_nodes): 
         #     for node_j in range(data.num_nodes):
         #         src_node = node_embedding[node_i]
         #         src_node = src_node.reshape(1, -1)

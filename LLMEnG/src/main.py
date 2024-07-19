@@ -2,7 +2,7 @@ import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
 from data_utils import DataCenter
-from model import GCN, GraphSage, EdgeClassification, NodeFusion
+from model import GCN, GraphSage, EdgeClassification, NodeFusion, GAT
 import torch
 import Parser
 
@@ -14,7 +14,8 @@ data_center = DataCenter(datasets_json=args.datasets_json, vocab_dir=args.vocab_
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
 # node_model = GCN(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
-node_model = GraphSage(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+# node_model = GraphSage(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+node_model = GAT(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
 
@@ -102,4 +103,4 @@ def edge_test():
 if __name__ == '__main__':
     node_train()
     # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
-    edge_train()
+    # edge_train()
