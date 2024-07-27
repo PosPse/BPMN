@@ -2,7 +2,7 @@ import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
 from data_utils import DataCenter
-from model import GCN, GraphSage, EdgeClassification, NodeFusion, GAT
+from model import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
 import torch
 import Parser
 
@@ -22,7 +22,7 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 # node_model = torch.load('/home/btr/bpmn/LLMEnG/src/node_model.pth', map_location=device)
 # node_model.eval()
 
-node_fusion_model = NodeFusion(fusion_method=args.fusion_method).to(device)
+node_fusion_model = EdgeFusion(fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(node_fusion = node_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 edge_criterion = torch.nn.CrossEntropyLoss().to(device)

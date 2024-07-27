@@ -6,7 +6,7 @@ from torch_geometric.loader import DataLoader
 from get_embs_llm import Tokenizer
 from enum import Enum
 from torch_geometric.data import Data
-from torch_sparse import SparseTensor
+from tqdm import tqdm
 
 class NodeType(Enum):
     Activity = 0
@@ -65,18 +65,14 @@ class RawData():
 # node_token_list: {self.node_token_list}\n'''
 
 class DataCenter():
-    def __init__(self, llm_model:str, datasets_json:str) -> None:
+    def __init__(self, datasets_json:str, tokenizer:Tokenizer) -> None:
         '''
-            llm_model: str, llm模型名称
             datasets_json: str, 数据集json文件路径
-
+            tokenizer: Tokenizer, 分词器
         '''
-        self.__llm_model:str = llm_model
         self.__datasets_json:str = datasets_json
-        self.__embedding_size:int = None
-        self.__datasets_list:list[dict] = None
+        self.__tokenizer:Tokenizer = tokenizer
         self.__datasets_RawData_list:list[RawData] = None
-        self.__tokenizer:Tokenizer = Tokenizer(self.__vocab_dir, self.__vocab_len, self.__embedding_size)
         self.__datasets = None
         self.__init_params()
 
@@ -86,17 +82,19 @@ class DataCenter():
             读取数据集json文件，并将数据集json文件中每一个数据转换为RawData对象
         '''
         with open(self.__datasets_json, 'r') as f:
-            self.__datasets_list = json.load(f)
-            self.__datasets_RawData_list = [RawData(raw_data) for raw_data in self.__datasets_list]
+            __datasets_list = json.load(f)
+            self.__datasets_RawData_list = [RawData(raw_data) for raw_data in __datasets_list]
             self.__datasets = self.__generate_dataset()
             
     def __generate_dataset(self) -> Dataset:
         '''
             生成数据集
         '''
+        print('加载数据集...')
         dataset = []
-        for raw_data in self.__datasets_RawData_list:
-            x = self.__tokenizer.token2embedding(raw_data.data_2_mask_single_signal_llm)
+        for raw_data in tqdm(self.__datasets_RawData_list):
+            # print(raw_data.filename)
+            x = self.__tokenizer.node2embedding(node_token=raw_data.node_token_list, node_token_type=raw_data.data_2_mask_single_signal_llm)
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
             num_nodes = len(raw_data.data_2_mask_single_signal_llm)
@@ -213,7 +211,9 @@ class DataCenter():
 import Parser
 if __name__ == '__main__':
     args = Parser.args
-    data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
+    device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+    tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
+    data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in test_dataloader:

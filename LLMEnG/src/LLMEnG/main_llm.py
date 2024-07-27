@@ -1,16 +1,18 @@
 import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
-from LLMEnG.src.LLMEnG.data_utils_llm import DataCenter
-from model import GCN, GraphSage, EdgeClassification, NodeFusion, GAT
+from data_utils_llm import DataCenter
+from model import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
+from get_embs_llm import Tokenizer
 import torch
 import Parser
 
 
 args = Parser.args
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-data_center = DataCenter(datasets_json=args.datasets_json, vocab_dir=args.vocab_dir, vocab_len=args.vocab_len, embedding_size=args.embedding_size)
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
+data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
 # node_model = GCN(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
@@ -22,7 +24,7 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 # node_model = torch.load('/home/btr/bpmn/LLMEnG/src/node_model.pth', map_location=device)
 # node_model.eval()
 
-node_fusion_model = NodeFusion(fusion_method=args.fusion_method).to(device)
+node_fusion_model = EdgeFusion(fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(node_fusion = node_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 edge_criterion = torch.nn.CrossEntropyLoss().to(device)

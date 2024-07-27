@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/btr/bpmn/LLMEnG/src')
 from torch.nn import Embedding
 import torch
 import torch.nn as nn
