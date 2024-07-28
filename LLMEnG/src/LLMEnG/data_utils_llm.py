@@ -212,7 +212,7 @@ import Parser
 if __name__ == '__main__':
     args = Parser.args
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
-    tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
+    tokenizer = Tokenizer(llm_name=args.llm_name, llm_model=args.llm_model, device=device)
     data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)

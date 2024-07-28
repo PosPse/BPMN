@@ -7,7 +7,7 @@ from torch_geometric.nn import SAGEConv
 from torch_geometric.nn import GATConv
 
 class GCN(nn.Module):
-    def __init__(self, embedding_size=128, hidden_size=64, node_num_classes=6):
+    def __init__(self, embedding_size, hidden_size, node_num_classes=6):
         super(GCN, self).__init__()
         self.conv1 = GCNConv(embedding_size, hidden_size)
         self.conv2 = GCNConv(hidden_size, hidden_size)

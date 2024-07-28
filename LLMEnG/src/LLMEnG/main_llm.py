@@ -2,22 +2,21 @@ import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
 from data_utils_llm import DataCenter
-from model import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
+from model_llm import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
 from get_embs_llm import Tokenizer
 import torch
 import Parser
 
 
 args = Parser.args
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
-tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
+tokenizer = Tokenizer(llm_name=args.llm_name, llm_model=args.llm_model, device=device)
 data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-# node_model = GCN(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
-# node_model = GraphSage(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
-node_model = GAT(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GCN(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GraphSage(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+node_model = GAT(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
 

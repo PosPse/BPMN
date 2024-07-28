@@ -13,8 +13,7 @@ class Tokenizer():
             the_way_of_emb_new_token: str, 新token的嵌入方式
             the_way_of_token_emb: str, token的嵌入方式
             the_way_of_fussion_node_emb: str, 节点嵌入的融合方式
-            node_emb_alpha: float, 节点嵌入中，节点本身嵌入的权重
-            node_type_emb_beta: float, 节点嵌入中，节点类型嵌入的权重
+            node_emb_alpha: float, 节点嵌入中，节点本身嵌入的权重(1-node_emb_alpha), 节点类型嵌入的权重(node_emb_alpha)
         '''
         self.__llm_name = llm_name
         self.__llm_model = llm_model
@@ -23,9 +22,9 @@ class Tokenizer():
         self.__the_way_of_token_emb = the_way_of_token_emb
         self.__the_way_of_fussion_node_emb = the_way_of_fussion_node_emb
         self.__node_emb_alpha = node_emb_alpha
-        self.__node_type_emb_beta = node_type_emb_beta
         self.tokenizer = BertTokenizer.from_pretrained(self.__llm_model)
         self.model = BertModel.from_pretrained(self.__llm_model).to(self.__device)
+        self.embedding_size = self.model.config.hidden_size
         self.__init_params()
 
     def __init_params(self) -> None:
@@ -71,7 +70,7 @@ class Tokenizer():
             node_type_emb: 节点类型嵌入
         '''
         if self.__the_way_of_fussion_node_emb == 'sum':
-            return node_emb * self.__node_emb_alpha + node_type_emb * self.__node_type_emb_beta
+            return node_emb * (1- self.__node_emb_alpha) + node_type_emb * self.__node_emb_alpha
         elif self.__the_way_of_fussion_node_emb == 'auto':
             pass
         elif self.__the_way_of_fussion_node_emb == 'concat':
