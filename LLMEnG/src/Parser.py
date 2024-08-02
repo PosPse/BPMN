@@ -13,10 +13,10 @@ parser.add_argument("--shuffle", type=bool, default="False", help="是否打乱�
 parser.add_argument("--node_num_classes", type=int, default="6", help="节点分类数量")
 parser.add_argument("--fusion_method", type=str, default="concat", help="节点融合方法")
 # 训练
-parser.add_argument("--hidden_size", type=int, default="256", help="隐藏层大小")
+parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--aggr", type=str, default="mean", help="聚合函数")
 parser.add_argument("--lr", type=float, default="0.01", help="学习率")
-parser.add_argument("--epochs", type=int, default="100", help="训练轮数")
+parser.add_argument("--epochs", type=int, default="30", help="训练轮数")
 
 '''
     base方法, 不使用LLM编码

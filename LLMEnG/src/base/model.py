@@ -81,26 +81,28 @@ class EdgeClassification(nn.Module):
     def forward(self, node_embedding, data):
         res = []
         x, edge_index = data.x, data.edge_index
-        # for node_i in range(data.num_nodes): 
-        #     for node_j in range(data.num_nodes):
-        #         src_node = node_embedding[node_i]
-        #         src_node = src_node.reshape(1, -1)
-        #         dst_node = node_embedding[node_j]
-        #         dst_node = dst_node.reshape(1, -1)
-        #         fused_node = self.node_fusion(src_node, dst_node)
-        #         edge_feature = self.linear_src(fused_node)
-        #         res.append(edge_feature)
-        # res = torch.cat(res, dim=0)
-        for node_i, node_j in edge_index.t().tolist():
-            src_node = node_embedding[node_i]
-            src_node = src_node.reshape(1, -1)
-            dst_node = node_embedding[node_j]
-            dst_node = dst_node.reshape(1, -1)
-            fused_node = self.node_fusion(src_node, dst_node)
-            edge_feature = self.linear_src(fused_node)
-            res.append(edge_feature)
+        for node_i in range(data.num_nodes): 
+            for node_j in range(data.num_nodes):
+                src_node = node_embedding[node_i]
+                src_node = src_node.reshape(1, -1)
+                dst_node = node_embedding[node_j]
+                dst_node = dst_node.reshape(1, -1)
+                # print(src_node.shape, dst_node.shape)
+                fused_node = self.node_fusion(src_node, dst_node)
+                edge_feature = self.linear_src(fused_node)
+                res.append(edge_feature)
         res = torch.cat(res, dim=0)
         return res
+        # for node_i, node_j in edge_index.t().tolist():
+        #     src_node = node_embedding[node_i]
+        #     src_node = src_node.reshape(1, -1)
+        #     dst_node = node_embedding[node_j]
+        #     dst_node = dst_node.reshape(1, -1)
+        #     fused_node = self.node_fusion(src_node, dst_node)
+        #     edge_feature = self.linear_src(fused_node)
+        #     res.append(edge_feature)
+        # res = torch.cat(res, dim=0)
+        # return res
                 
 
 
