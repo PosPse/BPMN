@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.nn import SAGEConv
 from torch_geometric.nn import GATConv
+from model_config import ModelConfig
 
 class GCN(nn.Module):
     def __init__(self, embedding_size, hidden_size, node_num_classes=6):
@@ -23,7 +24,7 @@ class GCN(nn.Module):
         return x
     
 class GraphSage(nn.Module):
-    def __init__(self, embedding_size=128, hidden_size=128, node_num_classes=6, aggr='mean'):
+    def __init__(self, embedding_size, hidden_size, node_num_classes=6, aggr='mean'):
         super(GraphSage, self).__init__()
         self.conv1 = SAGEConv(embedding_size, hidden_size, aggr)
         self.conv2 = SAGEConv(hidden_size, hidden_size, aggr)
@@ -42,11 +43,11 @@ class GraphSage(nn.Module):
         return x
     
 class GAT(nn.Module):
-    def __init__(self, embedding_size=128, hidden_size=64, node_num_classes=6, heads=1):
+    def __init__(self, embedding_size, hidden_size, node_num_classes=6, heads=1):
         super(GAT, self).__init__()
         self.conv1 = GATConv(embedding_size, hidden_size, heads)
         self.conv2 = GATConv(hidden_size*heads, node_num_classes, heads=1)
-    
+
     def forward(self, data, use_last_layer=True):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)

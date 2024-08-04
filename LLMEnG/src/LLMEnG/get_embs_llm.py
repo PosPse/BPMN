@@ -2,21 +2,19 @@ import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 from transformers import BertTokenizer, BertModel
 import torch
+from model_config import ModelConfig
 
 class Tokenizer():
-    def __init__(self, llm_name:str, llm_model:str, device:torch.device, the_way_of_emb_new_token:str = 'mean', the_way_of_token_emb:str = 'cls', the_way_of_fussion_node_emb:str = 'sum', node_emb_alpha:float = 1.0, node_type_emb_beta:float = 0.5) -> None:
+    def __init__(self, device:torch.device, the_way_of_emb_new_token:str = 'mean', the_way_of_token_emb:str = 'cls', the_way_of_fussion_node_emb:str = 'sum', node_emb_alpha:float = 1.0, node_type_emb_beta:float = 0.5) -> None:
         '''
             初始化Tokenizer，获取每个样本（一个图对应的文本）的词向量
-            llm_name: str, 模型名称
-            llm_model: str, 模型路径
             device: str, GPU设备
             the_way_of_emb_new_token: str, 新token的嵌入方式
             the_way_of_token_emb: str, token的嵌入方式
             the_way_of_fussion_node_emb: str, 节点嵌入的融合方式
             node_emb_alpha: float, 节点嵌入中，节点本身嵌入的权重(1-node_emb_alpha), 节点类型嵌入的权重(node_emb_alpha)
         '''
-        self.__llm_name = llm_name
-        self.__llm_model = llm_model
+        self.__llm_model = ModelConfig.get_current_model().model_path
         self.__device = device
         self.__the_way_of_emb_new_token = the_way_of_emb_new_token
         self.__the_way_of_token_emb = the_way_of_token_emb
@@ -106,7 +104,9 @@ import Parser
 if __name__ == '__main__':
     args = Parser.args
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
-    tokenizer = Tokenizer(llm_name=args.llm_name, llm_model=args.llm_model, device=device)
+    tokenizer = Tokenizer(device=device)
+    ModelConfig.set_current_model(args.model_name)
+    print(ModelConfig.get_current_model().model_name)
     node_token_list = [
             "The credit company receives the credit information from the customer",
             "If",
@@ -152,11 +152,6 @@ if __name__ == '__main__':
             "[activity]"
         ]
     print(tokenizer.node2embedding(node_token_list, data_2_mask_single_signal_llm).shape)
-    # print(tokenizer.tokenizer(data_2_mask_single_signal_llm))
-    # with torch.no_grad():
-    #     input = tokenizer.tokenizer(data_2_mask_single_signal_llm, return_tensors='pt', padding=True, truncation=True)
-    #     print(input)
-    #     output = tokenizer.model(**input)
 
 
     

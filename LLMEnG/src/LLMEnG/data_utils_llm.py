@@ -221,4 +221,3 @@ if __name__ == '__main__':
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
                 print(subgraph)
-    

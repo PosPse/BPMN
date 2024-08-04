@@ -6,17 +6,18 @@ from model_llm import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
 from get_embs_llm import Tokenizer
 import torch
 import Parser
-
+from model_config import ModelConfig
 
 args = Parser.args
+ModelConfig.set_current_model(args.model_name)
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
-tokenizer = Tokenizer(llm_name=args.llm_name, llm_model=args.llm_model, device=device)
+tokenizer = Tokenizer(device=device)
 data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-# node_model = GCN(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
-# node_model = GraphSage(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
-node_model = GAT(embedding_size=tokenizer.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GCN(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GraphSage(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+node_model = GAT(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
 
@@ -101,7 +102,10 @@ def edge_test():
         accurcy = correct_pred_num / edge_num
         print(f'device: {device}, Test Accuracy: {accurcy}')
 
+from model_config import ModelConfig
 if __name__ == '__main__':
     node_train()
     # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
     # edge_train()
+    # ModelConfig.set_current_model("bert-large-uncased")
+    # pass

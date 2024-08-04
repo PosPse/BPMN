@@ -30,8 +30,7 @@ parser.add_argument("--embedding_size", type=int, default="128", help="词向量
     LLM方法, 使用LLM编码
 '''
 # 模型
-parser.add_argument("--llm_name", type=str, default="bert", choices=['bert', 'llama'], help="LLM模型名称")
-parser.add_argument("--llm_model", type=str, default="/home/btr/bpmn/model/safetensors/bert-base-uncased", help="LLM模型路径")
+parser.add_argument("--model_name", type=str, default="bert-base-uncased", choices=['bert-base-uncased', 'llama'], help="LLM模型名称")
 parser.add_argument("--the_way_of_emb_new_token", type=str, default="mean", choices=['random', 'mean', 'zero'], help="新token的嵌入方式: random | mean | zero | copy")
 parser.add_argument("--the_way_of_token_emb", type=str, default="sum", choices=['cls'], help="token嵌入的获取方式: cls(使用CLS作为token嵌入) | mean(使用最后一层模型输出，求平均) | pooler_output(bert模型的输出)")
 parser.add_argument("--the_way_of_fussion_node_emb", type=str, default="sum", choices=['sum'], help="节点嵌入融合方式: sum(加权求和) | auto(模型自动训练) | concat")
