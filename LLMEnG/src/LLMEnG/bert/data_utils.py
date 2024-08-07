@@ -6,6 +6,7 @@ from torch_geometric.loader import DataLoader
 from get_embs import Tokenizer
 from enum import Enum
 from torch_geometric.data import Data
+from tqdm import tqdm
 from torch_sparse import SparseTensor
 
 class NodeType(Enum):
@@ -48,6 +49,7 @@ class RawData():
         self.data_2_mask_single_signal:list[str] = raw_data['data_2_mask_single_signal']
         self.signal_token_llm_list:list[str] = raw_data['signal_token_llm_list']
         self.data_2_mask_single_signal_llm:list[str] = raw_data['data_2_mask_single_signal_llm']
+        self.node_token_list:list[str] = raw_data['node_token_list']
         self.edge_y = None
 
 #     def __str__(self) -> str:
@@ -60,23 +62,18 @@ class RawData():
 # signal_tokrn_list: {self.signal_token_list}\n
 # data_2_mask_single_signal: {self.data_2_mask_single_signal}\n
 # signal_token_llm_list: {self.signal_token_llm_list}\n
-# data_2_mask_single_signal_llm: {self.data_2_mask_single_signal_llm}\n'''
+# data_2_mask_single_signal_llm: {self.data_2_mask_single_signal_llm}\n
+# node_token_list: {self.node_token_list}\n'''
 
 class DataCenter():
-    def __init__(self, datasets_json:str, vocab_dir:str, vocab_len:int, embedding_size:int) -> None:
+    def __init__(self, datasets_json:str, tokenizer:Tokenizer) -> None:
         '''
             datasets_json: str, 数据集json文件路径
-            vocab_dir: str, 词表路径
-            vocab_len: int, 词表长度
-            embedding_size: int, 词向量维度
+            tokenizer: Tokenizer, 分词器
         '''
         self.__datasets_json:str = datasets_json
-        self.__vocab_dir:str = vocab_dir
-        self.__vocab_len:int = vocab_len
-        self.__embedding_size:int = embedding_size
-        self.__datasets_list:list[dict] = None
+        self.__tokenizer:Tokenizer = tokenizer
         self.__datasets_RawData_list:list[RawData] = None
-        self.__tokenizer:Tokenizer = Tokenizer(self.__vocab_dir, self.__vocab_len, self.__embedding_size)
         self.__datasets = None
         self.__init_params()
 
@@ -86,17 +83,19 @@ class DataCenter():
             读取数据集json文件，并将数据集json文件中每一个数据转换为RawData对象
         '''
         with open(self.__datasets_json, 'r') as f:
-            self.__datasets_list = json.load(f)
-            self.__datasets_RawData_list = [RawData(raw_data) for raw_data in self.__datasets_list]
+            __datasets_list = json.load(f)
+            self.__datasets_RawData_list = [RawData(raw_data) for raw_data in __datasets_list]
             self.__datasets = self.__generate_dataset()
             
     def __generate_dataset(self) -> Dataset:
         '''
             生成数据集
         '''
+        print('加载数据集...')
         dataset = []
-        for raw_data in self.__datasets_RawData_list:
-            x = self.__tokenizer.token2embedding(raw_data.data_2_mask_single_signal_llm)
+        for raw_data in tqdm(self.__datasets_RawData_list):
+            # print(raw_data.filename)
+            x = self.__tokenizer.node2embedding(node_token=raw_data.node_token_list, node_token_type=raw_data.data_2_mask_single_signal_llm)
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
             num_nodes = len(raw_data.data_2_mask_single_signal_llm)
@@ -105,11 +104,9 @@ class DataCenter():
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
             edge_y = torch.tensor(edge_y, dtype=torch.long)
-            # print(edge_y)
             edge_y = SparseTensor.from_dense(edge_y)
             raw_data.edge_y = edge_y
             data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
-            # data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return Dataset(dataset)
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -166,7 +163,7 @@ class DataCenter():
                 raise Exception(f'{token} is not in [activity, condition, sign-successor, sign-selection, sign-parallel, sign-loop]')
         y = [get_y_category(token) for token in data_2_mask_single_signal_llm]
         return y
-    
+
     def __generate_edge_y(self, edge_index:list[list[int]], num_nodes:int, y:list[int]) -> list[list[int]]:
         '''
             生成边标签
@@ -187,13 +184,6 @@ class DataCenter():
             edge_y[node_i][node_j] = edge_i_j_type
             edge_y[node_j][node_i] = edge_i_j_type
         return edge_y
-        # edge_y = []
-        # for node_i, node_j in edge_index:
-        #     node_i_type = y[node_i]
-        #     node_j_type = y[node_j]
-        #     edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
-        #     edge_y.append(edge_i_j_type)
-        # return edge_y
                 
     def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
@@ -212,15 +202,16 @@ class DataCenter():
         '''
         dataset = self.__datasets[50:]
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-import LLMEnG.src.LLMEnG.base.Parser as Parser
+import Parser
 if __name__ == '__main__':
     args = Parser.args
-    data_center = DataCenter(args.datasets_json, args.vocab_dir, args.vocab_len, args.embedding_size)
+    device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+    tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
+    data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in test_dataloader:
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
-                print(subgraph.x.shape)
-    
+                print(subgraph)

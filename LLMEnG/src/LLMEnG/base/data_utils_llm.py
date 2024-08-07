@@ -208,7 +208,7 @@ class DataCenter():
         '''
         dataset = self.__datasets[50:]
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-import Parser
+import   Parser
 if __name__ == '__main__':
     args = Parser.args
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')

@@ -73,9 +73,9 @@ class EdgeFusion(nn.Module):
         return torch.cat((src_node, dst_node), dim=1)
 
 class EdgeClassification(nn.Module):
-    def __init__(self, node_fusion, edge_num_classes=21):
+    def __init__(self, edge_fusion, edge_num_classes=21):
         super(EdgeClassification, self).__init__()
-        self.node_fusion = node_fusion
+        self.edge_fusion = edge_fusion
         self.linear_src = nn.Linear(128, edge_num_classes)
         
 
@@ -88,7 +88,7 @@ class EdgeClassification(nn.Module):
         #         src_node = src_node.reshape(1, -1)
         #         dst_node = node_embedding[node_j]
         #         dst_node = dst_node.reshape(1, -1)
-        #         fused_node = self.node_fusion(src_node, dst_node)
+        #         fused_node = self.edge_fusion(src_node, dst_node)
         #         edge_feature = self.linear_src(fused_node)
         #         res.append(edge_feature)
         # res = torch.cat(res, dim=0)
@@ -97,7 +97,7 @@ class EdgeClassification(nn.Module):
             src_node = src_node.reshape(1, -1)
             dst_node = node_embedding[node_j]
             dst_node = dst_node.reshape(1, -1)
-            fused_node = self.node_fusion(src_node, dst_node)
+            fused_node = self.edge_fusion(src_node, dst_node)
             edge_feature = self.linear_src(fused_node)
             res.append(edge_feature)
         res = torch.cat(res, dim=0)

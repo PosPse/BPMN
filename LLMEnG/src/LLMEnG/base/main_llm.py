@@ -1,29 +1,31 @@
 import sys
 sys.path.append('/home/btr/bpmn/LLMEnG/src')
 
-from data_utils import DataCenter
-from model import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
+from data_utils_llm import DataCenter
+from model_llm import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
+from get_embs_llm import Tokenizer
 import torch
-import LLMEnG.src.LLMEnG.base.Parser as Parser
-
+import Parser as Parser
+from model_config import ModelConfig
 
 args = Parser.args
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-data_center = DataCenter(datasets_json=args.datasets_json, vocab_dir=args.vocab_dir, vocab_len=args.vocab_len, embedding_size=args.embedding_size)
+ModelConfig.set_current_model(args.model_name)
+device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
+tokenizer = Tokenizer(device=device)
+data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-# node_model = GCN(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
-node_model = GraphSage(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
-# node_model = GAT(embedding_size=args.embedding_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GCN(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+node_model = GraphSage(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+# node_model = GAT(embedding_size=ModelConfig.get_current_model().hidden_size, hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
 
 # node_model = torch.load('/home/btr/bpmn/LLMEnG/src/node_model.pth', map_location=device)
 # node_model.eval()
 
-node_fusion_model = EdgeFusion(fusion_method=args.fusion_method).to(device)
-edge_model = EdgeClassification(node_fusion = node_fusion_model).to(device)
+edge_fusion_model = EdgeFusion(fusion_method=args.fusion_method).to(device)
+edge_model = EdgeClassification(edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 edge_criterion = torch.nn.CrossEntropyLoss().to(device)
 
@@ -73,11 +75,7 @@ def edge_train():
                 node_embedding = node_model(subgraph, use_last_layer=False)
                 # node_embedding = subgraph.x.to(device)
                 output = edge_model(node_embedding, subgraph)
-                # print(output.shape)
-                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                # print(edge_y)
-                # loss = edge_criterion(output, subgraph.edge_y)
-                loss = edge_criterion(output, edge_y)
+                loss = edge_criterion(output, subgraph.edge_y)
                 LOSS += loss.item()
                 loss.backward()
                 edge_optimizer.step()
@@ -99,14 +97,15 @@ def edge_test():
                 # node_embedding = subgraph.x.to(device)
                 output = edge_model(node_embedding, subgraph)
                 pred = output.argmax(dim=1)
-                # edge_num += subgraph.edge_y.size(0)
-                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                edge_num += len(edge_y)
-                correct_pred_num += torch.sum(pred == edge_y)
+                edge_num += subgraph.edge_y.size(0)
+                correct_pred_num += torch.sum(pred == subgraph.edge_y)
         accurcy = correct_pred_num / edge_num
         print(f'device: {device}, Test Accuracy: {accurcy}')
 
+from model_config import ModelConfig
 if __name__ == '__main__':
     node_train()
     # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
     edge_train()
+    # ModelConfig.set_current_model("bert-large-uncased")
+    # pass

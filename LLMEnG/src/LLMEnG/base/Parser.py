@@ -16,7 +16,7 @@ parser.add_argument("--fusion_method", type=str, default="concat", help="节点�
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--aggr", type=str, default="mean", help="聚合函数")
 parser.add_argument("--lr", type=float, default="0.01", help="学习率")
-parser.add_argument("--epochs", type=int, default="30", help="训练轮数")
+parser.add_argument("--epochs", type=int, default="10", help="训练轮数")
 
 '''
     base方法, 不使用LLM编码

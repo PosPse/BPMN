@@ -87,7 +87,7 @@ class Tokenizer():
         return tokens_positional_embedding
 
 
-import Parser
+import LLMEnG.src.LLMEnG.base.Parser as Parser
 if __name__ == '__main__':
     args = Parser.args
     tokenizer = Tokenizer(args.vocab_dir, args.vocab_len, args.embedding_size)
