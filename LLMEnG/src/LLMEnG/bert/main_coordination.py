@@ -23,8 +23,11 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
-edge_criterion = torch.nn.CrossEntropyLoss().to(device)
-alpha = 0.01
+weight = [10 for _ in range(21)]
+weight[0] = 1
+weight = torch.tensor(weight, dtype=torch.float32)
+edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
+alpha = 0.5
 def train():
     for epoch in range(args.epochs):
         node_model.train()
@@ -57,99 +60,41 @@ def test():
     with torch.no_grad():
         node_correct_pred_num = 0
         edge_correct_pred_num = 0
+        positive_edge_correct_pred_num = 0
+        negative_edge_correct_pred_num = 0
         node_num = 0
         edge_num = 0
-        for batch_data in test_dataloader:
+        positive_edge_num = 0
+        negative_edge_num = 0
+        for batch_data in tarin_dataloader:
             batch_data = batch_data.to(device)
             # 获取批量数据里的edge_y, 从稀疏矩阵中恢复原邻接矩阵, 组合为对角矩阵
             edge_y = block_diag(*[v.toarray() for v in batch_data.edge_y])
             # 转换为tensor, 并展平
             edge_y = torch.tensor(edge_y, dtype=torch.long).view(-1).to(device)
+            
             node_embedding, node_output = node_model(batch_data)
             node_pred = node_output.argmax(dim=1)
             node_num += len(batch_data.y)
             node_correct_pred_num += torch.sum(node_pred == batch_data.y)
+            
             edge_output = edge_model(node_embedding, batch_data)
             edge_pred = edge_output.argmax(dim=1)
             edge_num += len(edge_y)
             edge_correct_pred_num += torch.sum(edge_pred == edge_y)
+           
+            non_zero_indices = edge_y.nonzero().view(-1)
+            positive_edge_num += len(non_zero_indices)
+            positive_edge_correct_pred_num += torch.sum(edge_pred[non_zero_indices] == edge_y[non_zero_indices])
+
+            zero_indices = (edge_y == 0).nonzero().view(-1)
+            negative_edge_num += len(zero_indices)
+            negative_edge_correct_pred_num += torch.sum(edge_pred[zero_indices] == edge_y[zero_indices])
         node_accurcy = node_correct_pred_num / node_num
         edge_accurcy = edge_correct_pred_num / edge_num
-        print(f'device: {device}, node classification accuracy: {node_accurcy}, edge classification accuracy: {edge_accurcy}')
-def node_train():
-    for epoch in range(args.epochs):
-        node_model.train()
-        LOSS = 0
-        for batch_data in tarin_dataloader:
-            node_optimizer.zero_grad()
-            batch_data = batch_data.to(device)
-            output = node_model(batch_data)
-            loss = node_criterion(output, batch_data.y)
-            LOSS += loss.item()
-            loss.backward()
-            node_optimizer.step()
-        print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
-        node_test()
-
-def node_test():
-    node_model.eval()
-    with torch.no_grad():
-        correct_pred_num = 0
-        node_num = 0
-        for batch_data in test_dataloader:
-            batch_data = batch_data.to(device)
-            output = node_model(batch_data)
-            pred = output.argmax(dim=1)
-            node_num += len(batch_data.y)
-            correct_pred_num += torch.sum(pred == batch_data.y)
-        accurcy = correct_pred_num / node_num
-        print(f'device: {device}, Test Accuracy: {accurcy}')
-# 冻结模型的参数
-def freeze_model_parameters(model):
-    for param in model.parameters():
-        param.requires_grad = False
-def edge_train():
-    freeze_model_parameters(node_model)
-    for epoch in range(args.epochs):
-        edge_model.train()
-        LOSS = 0
-        for batch_data in tarin_dataloader:
-            edge_optimizer.zero_grad()
-            batch_data = batch_data.to(device)
-            unique_batch_indices = torch.unique(batch_data.batch)
-            for batch_index in unique_batch_indices:
-                subgraph = batch_data.get_example(batch_index)
-                node_embedding = node_model(subgraph, use_last_layer=False)
-                # node_embedding = subgraph.x.to(device)
-                output = edge_model(node_embedding, subgraph)
-                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                loss = edge_criterion(output, edge_y)
-                LOSS += loss.item()
-                loss.backward()
-                edge_optimizer.step()
-        print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
-        edge_test()
-
-def edge_test():
-    freeze_model_parameters(node_model)
-    edge_model.eval()
-    with torch.no_grad():
-        correct_pred_num = 0
-        edge_num = 0
-        for batch_data in test_dataloader:
-            batch_data = batch_data.to(device)
-            unique_batch_indices = torch.unique(batch_data.batch)
-            for batch_index in unique_batch_indices:
-                subgraph = batch_data.get_example(batch_index)
-                node_embedding = node_model(subgraph, use_last_layer=False)
-                # node_embedding = subgraph.x.to(device)
-                output = edge_model(node_embedding, subgraph)
-                pred = output.argmax(dim=1)
-                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                edge_num += len(edge_y)
-                correct_pred_num += torch.sum(pred == edge_y)
-        accurcy = correct_pred_num / edge_num
-        print(f'device: {device}, Test Accuracy: {accurcy}')
+        positive_edge_accurcy = positive_edge_correct_pred_num / positive_edge_num
+        negative_edge_accurcy = negative_edge_correct_pred_num / negative_edge_num
+        print(f'device: {device}, node classification accuracy: {node_accurcy}, edge classification accuracy: {edge_accurcy}, positive edge classification accuracy: {positive_edge_accurcy}, negative edge classification accuracy: {negative_edge_accurcy}')
 
 if __name__ == '__main__':
     train()
