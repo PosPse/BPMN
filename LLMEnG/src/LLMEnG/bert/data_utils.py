@@ -8,6 +8,7 @@ from enum import Enum
 from torch_geometric.data import Data
 from tqdm import tqdm
 from torch_sparse import SparseTensor
+from scipy.sparse import csr_matrix
 
 class NodeType(Enum):
     Activity = 0
@@ -19,6 +20,7 @@ class NodeType(Enum):
 
 class EdgeType(Enum):
     pass
+
 
 # class Data(Data):
 #     def __init__(self, x, edge_index, edge_attr=None, y=None, pos=None, time=None, raw_data=None, edge_y=None, **kwargs):
@@ -103,10 +105,11 @@ class DataCenter():
             
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
-            edge_y = torch.tensor(edge_y, dtype=torch.long)
-            edge_y = SparseTensor.from_dense(edge_y)
-            raw_data.edge_y = edge_y
-            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data)
+            # edge_y = torch.tensor(edge_y, dtype=torch.long)
+            # edge_y = SparseTensor.from_dense(edge_y)
+            # raw_data.edge_y = edge_y
+            edge_y = csr_matrix(edge_y)
+            data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return Dataset(dataset)
     def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
@@ -211,7 +214,13 @@ if __name__ == '__main__':
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in test_dataloader:
+            a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
+            print(a)
+            break
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
-                print(subgraph)
+                print(torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long))
+                
+            break
+            

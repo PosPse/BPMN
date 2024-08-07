@@ -24,6 +24,31 @@ edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 edge_criterion = torch.nn.CrossEntropyLoss().to(device)
 
+def train():
+    for epoch in range(args.epochs):
+        node_model.train()
+        edge_model.train()
+        LOSS = 0
+        for batch_data in tarin_dataloader:
+            node_optimizer.zero_grad()
+            edge_optimizer.zero_grad()
+            batch_data = batch_data.to(device)
+            # 获取批量数据里的edge_y, 从稀疏矩阵中恢复原邻接矩阵, 转换为tensor, 按照行展开为一行
+            edge_y = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
+            # 批量数据里的edge_y合并
+            edge_y = torch.cat(edge_y, dim=0).to(device)
+            
+            node_embedding, node_output = node_model(batch_data)
+            node_loss = node_criterion(node_output, batch_data.y)
+            edge_output = edge_model(node_embedding, batch_data)
+            # print(edge_output.shape, edge_y.shape)
+            edge_loss = edge_criterion(edge_output, edge_y)
+            loss = node_loss + edge_loss
+            LOSS += loss.item()
+            loss.backward()
+            node_optimizer.step()
+            edge_optimizer.step()
+        print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
 def node_train():
     for epoch in range(args.epochs):
         node_model.train()
@@ -31,7 +56,7 @@ def node_train():
         for batch_data in tarin_dataloader:
             node_optimizer.zero_grad()
             batch_data = batch_data.to(device)
-            _, output = node_model(batch_data)
+            output = node_model(batch_data)
             loss = node_criterion(output, batch_data.y)
             LOSS += loss.item()
             loss.backward()
@@ -46,7 +71,7 @@ def node_test():
         node_num = 0
         for batch_data in test_dataloader:
             batch_data = batch_data.to(device)
-            _, output = node_model(batch_data)
+            output = node_model(batch_data)
             pred = output.argmax(dim=1)
             node_num += len(batch_data.y)
             correct_pred_num += torch.sum(pred == batch_data.y)
@@ -67,11 +92,10 @@ def edge_train():
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
-                node_embedding, _ = node_model(subgraph)
+                node_embedding = node_model(subgraph, use_last_layer=False)
                 # node_embedding = subgraph.x.to(device)
                 output = edge_model(node_embedding, subgraph)
-                # edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
+                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
                 loss = edge_criterion(output, edge_y)
                 LOSS += loss.item()
                 loss.backward()
@@ -90,20 +114,19 @@ def edge_test():
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
-                node_embedding, _ = node_model(subgraph)
+                node_embedding = node_model(subgraph, use_last_layer=False)
                 # node_embedding = subgraph.x.to(device)
                 output = edge_model(node_embedding, subgraph)
                 pred = output.argmax(dim=1)
-                # edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
+                edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
                 edge_num += len(edge_y)
                 correct_pred_num += torch.sum(pred == edge_y)
         accurcy = correct_pred_num / edge_num
         print(f'device: {device}, Test Accuracy: {accurcy}')
 
 if __name__ == '__main__':
-    node_train()
+    train()
     # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
-    edge_train()
+    # edge_train()
     # ModelConfig.set_current_model("bert-large-uncased")
     # pass

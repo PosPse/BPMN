@@ -29,7 +29,7 @@ class GraphSage(nn.Module):
         self.conv2 = SAGEConv(hidden_size, hidden_size, aggr)
         self.conv3 = SAGEConv(hidden_size, node_num_classes, aggr)
 
-    def forward(self, data, use_last_layer=True):
+    def forward(self, data):
         x, edge_index = data.x, data.edge_index
         x = self.conv1(x, edge_index)
         x = F.relu(x)
@@ -37,9 +37,8 @@ class GraphSage(nn.Module):
         x = self.conv2(x, edge_index) 
         x = F.dropout(x, training=self.training)
         x = F.relu(x)
-        if use_last_layer:
-            x = self.conv3(x, edge_index)
-        return x
+        out = self.conv3(x, edge_index)
+        return x, out
     
 class GAT(nn.Module):
     def __init__(self, hidden_size, node_num_classes=6, heads=1):

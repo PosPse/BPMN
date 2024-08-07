@@ -65,7 +65,9 @@ class Tokenizer():
             node_emb: 节点嵌入
             node_type_emb: 节点类型嵌入
         '''
-        if self.__the_way_of_fussion_node_emb == 'sum':
+        if self.__the_way_of_fussion_node_emb == 'none':
+            return node_emb
+        elif self.__the_way_of_fussion_node_emb == 'sum':
             return node_emb * (1- self.__node_emb_alpha) + node_type_emb * self.__node_emb_alpha
         elif self.__the_way_of_fussion_node_emb == 'auto':
             pass
