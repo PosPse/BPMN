@@ -3,6 +3,7 @@ from model import GCN, GraphSage, EdgeClassification, EdgeFusion, GAT
 from get_embs import Tokenizer
 import torch
 import Parser as Parser
+from scipy.linalg import block_diag
 
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
@@ -23,7 +24,7 @@ edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.
 edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 edge_criterion = torch.nn.CrossEntropyLoss().to(device)
-
+alpha = 0.01
 def train():
     for epoch in range(args.epochs):
         node_model.train()
@@ -33,22 +34,48 @@ def train():
             node_optimizer.zero_grad()
             edge_optimizer.zero_grad()
             batch_data = batch_data.to(device)
-            # 获取批量数据里的edge_y, 从稀疏矩阵中恢复原邻接矩阵, 转换为tensor, 按照行展开为一行
-            edge_y = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
-            # 批量数据里的edge_y合并
-            edge_y = torch.cat(edge_y, dim=0).to(device)
-            
+            # 获取批量数据里的edge_y, 从稀疏矩阵中恢复原邻接矩阵, 组合为对角矩阵
+            edge_y = block_diag(*[v.toarray() for v in batch_data.edge_y])
+            # 转换为tensor, 并展平
+            edge_y = torch.tensor(edge_y, dtype=torch.long).view(-1).to(device)
             node_embedding, node_output = node_model(batch_data)
             node_loss = node_criterion(node_output, batch_data.y)
             edge_output = edge_model(node_embedding, batch_data)
             # print(edge_output.shape, edge_y.shape)
             edge_loss = edge_criterion(edge_output, edge_y)
-            loss = node_loss + edge_loss
+            loss = alpha * node_loss + (1-alpha)*edge_loss
             LOSS += loss.item()
             loss.backward()
             node_optimizer.step()
             edge_optimizer.step()
         print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
+        test()
+
+def test():
+    node_model.eval()
+    edge_model.eval()
+    with torch.no_grad():
+        node_correct_pred_num = 0
+        edge_correct_pred_num = 0
+        node_num = 0
+        edge_num = 0
+        for batch_data in test_dataloader:
+            batch_data = batch_data.to(device)
+            # 获取批量数据里的edge_y, 从稀疏矩阵中恢复原邻接矩阵, 组合为对角矩阵
+            edge_y = block_diag(*[v.toarray() for v in batch_data.edge_y])
+            # 转换为tensor, 并展平
+            edge_y = torch.tensor(edge_y, dtype=torch.long).view(-1).to(device)
+            node_embedding, node_output = node_model(batch_data)
+            node_pred = node_output.argmax(dim=1)
+            node_num += len(batch_data.y)
+            node_correct_pred_num += torch.sum(node_pred == batch_data.y)
+            edge_output = edge_model(node_embedding, batch_data)
+            edge_pred = edge_output.argmax(dim=1)
+            edge_num += len(edge_y)
+            edge_correct_pred_num += torch.sum(edge_pred == edge_y)
+        node_accurcy = node_correct_pred_num / node_num
+        edge_accurcy = edge_correct_pred_num / edge_num
+        print(f'device: {device}, node classification accuracy: {node_accurcy}, edge classification accuracy: {edge_accurcy}')
 def node_train():
     for epoch in range(args.epochs):
         node_model.train()
