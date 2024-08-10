@@ -17,13 +17,10 @@ node_model = GraphSage(hidden_size=args.hidden_size, node_num_classes=args.node_
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
 
-# node_model = torch.load('/home/btr/bpmn/LLMEnG/src/node_model.pth', map_location=device)
-# node_model.eval()
-
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
-weight = [10 for _ in range(21)]
+weight = [5 for _ in range(21)]
 weight[0] = 1
 weight = torch.tensor(weight, dtype=torch.float32)
 edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
@@ -98,7 +95,3 @@ def test():
 
 if __name__ == '__main__':
     train()
-    # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
-    # edge_train()
-    # ModelConfig.set_current_model("bert-large-uncased")
-    # pass
