@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description="A simple LLM.")
 '''
 parser.add_argument("--device", type=str, default="cuda:0", choices=['cpu', 'cuda:0', 'cuda:1'], help="GPU设备")
 # 数据
-parser.add_argument("--datasets_json", type=str, default="/home/btr/bpmn/LLMEnG/my-data/datasets5.json", help="JSON格式的数据集路径")
+parser.add_argument("--datasets_json", type=str, default="/home/btr/bpmn/LLMEnG/my-data/datasets4.json", help="JSON格式的数据集路径")
 parser.add_argument("--batch_size", type=int, default="1", help="批量大小")
 parser.add_argument("--shuffle", type=bool, default="False", help="是否打乱数据")
 # 模型
