@@ -20,7 +20,7 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
-weight = [5 for _ in range(21)]
+weight = [5 for _ in range(10)]
 weight[0] = 1
 weight = torch.tensor(weight, dtype=torch.float32)
 edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)

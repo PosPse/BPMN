@@ -72,7 +72,7 @@ class EdgeFusion(nn.Module):
         return torch.cat((src_node, dst_node), dim=1)
 
 class EdgeClassification(nn.Module):
-    def __init__(self, hidden_size, edge_fusion, edge_num_classes=21):
+    def __init__(self, hidden_size, edge_fusion, edge_num_classes=10):
         super(EdgeClassification, self).__init__()
         self.hidden_size = hidden_size
         self.edge_fusion = edge_fusion

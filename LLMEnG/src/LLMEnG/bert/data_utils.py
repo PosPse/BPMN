@@ -169,10 +169,38 @@ class DataCenter():
             edge_index: 边索引
             y: 节点标签
         '''
+        # def get_edge_y_category(node_i_type:int, node_j_type:int) -> int:
+        #     edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5],[2,2],[2,3],[2,4],[2,5],[3,3],[3,4],[3,5],[4,4],[4,5],[5,5]]
+        #     edge = [node_i_type, node_j_type]
+        #     edge.sort()
+        #     return edge_map.index(edge) + 1
+        
+        # edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
+        # for node_i, node_j in edge_index:
+        #     node_i_type = y[node_i]
+        #     node_j_type = y[node_j]
+        #     edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
+        #     edge_y[node_i][node_j] = edge_i_j_type
+        #     edge_y[node_j][node_i] = edge_i_j_type
         def get_edge_y_category(node_i_type:int, node_j_type:int) -> int:
-            edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5],[2,2],[2,3],[2,4],[2,5],[3,3],[3,4],[3,5],[4,4],[4,5],[5,5]]
+            '''
+                none: 0
+                activity -> activity: 1 [0,0]
+                activity -> condition: 2 [0,1]
+                activity -> sign-successor: 3 [0,2]
+                activity -> sign-selection: 4 [0,3]
+                activity -> sign-parallel: 5 [0,4]
+                activity -> sign-loop: 6 [0,5]
+                condition -> sign-successor: 7 [1,2]
+                condition -> sign-selection: 8 [1,3]
+                condition -> sign-parallel: 9 [1,4]
+                condition -> sign-loop: 10 [1,5]
+            '''
+            edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5]]
             edge = [node_i_type, node_j_type]
             edge.sort()
+            if edge not in edge_map:
+                return 0
             return edge_map.index(edge) + 1
         
         edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
@@ -212,15 +240,15 @@ if __name__ == '__main__':
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in test_dataloader:
         print(batch_data)
-        print(batch_data.edge)
-        print(Batch.from_data_list([v for v in batch_data.edge]))
-            # a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
-            # print(a)
-            # break
-        unique_batch_indices = torch.unique(batch_data.batch)
-        for batch_index in unique_batch_indices:
-            subgraph = batch_data.get_example(batch_index)
-            print(subgraph)
+        # print(batch_data.edge)
+        # print(Batch.from_data_list([v for v in batch_data.edge]))
+        #     # a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
+        #     # print(a)
+        #     # break
+        # unique_batch_indices = torch.unique(batch_data.batch)
+        # for batch_index in unique_batch_indices:
+        #     subgraph = batch_data.get_example(batch_index)
+        #     print(subgraph)
                 
-        break
+        # break
             
