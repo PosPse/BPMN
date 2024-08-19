@@ -19,10 +19,10 @@ parser.add_argument("--lr", type=float, default="0.05", help="学习率")
 parser.add_argument("--epochs", type=int, default="100", help="训练轮数")
 
 # 模型
-parser.add_argument("--llm_model", type=str, default="/home/btr/bpmn/model/safetensors/bert-base-uncased", help="LLM模型路径")
+parser.add_argument("--llm_model", type=str, default="/home/btr/bpmn/model/safetensors/Meta-Llama-3-8B-Instruct", help="LLM模型路径")
 parser.add_argument("--the_way_of_emb_new_token", type=str, default="mean", choices=['random', 'mean', 'zero'], help="新token的嵌入方式: random | mean | zero | copy")
 parser.add_argument("--the_way_of_token_emb", type=str, default="sum", choices=['cls'], help="token嵌入的获取方式: cls(使用CLS作为token嵌入) | mean(使用最后一层模型输出，求平均) | pooler_output(bert模型的输出)")
-parser.add_argument("--the_way_of_fussion_node_emb", type=str, default="sum", choices=['none', 'sum'], help="节点嵌入融合方式: none(不使用节点类型嵌入) | sum(加权求和) | auto(模型自动训练) | concat")
+parser.add_argument("--the_way_of_fussion_node_emb", type=str, default="none", choices=['none', 'sum'], help="节点嵌入融合方式: none(不使用节点类型嵌入) | sum(加权求和) | auto(模型自动训练) | concat")
 parser.add_argument("--node_emb_alpha", type=float, default="1", help="节点嵌入中，节点本身嵌入的权重(1-node_emb_alpha), 节点类型嵌入的权重(node_emb_alpha)")
 
 

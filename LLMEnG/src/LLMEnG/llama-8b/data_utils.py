@@ -210,17 +210,17 @@ if __name__ == '__main__':
     data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-    for batch_data in test_dataloader:
+    for batch_data in tarin_dataloader:
         print(batch_data)
-        print(batch_data.edge)
-        print(Batch.from_data_list([v for v in batch_data.edge]))
-            # a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
-            # print(a)
-            # break
-        unique_batch_indices = torch.unique(batch_data.batch)
-        for batch_index in unique_batch_indices:
-            subgraph = batch_data.get_example(batch_index)
-            print(subgraph)
+        # print(batch_data.edge)
+        # print(Batch.from_data_list([v for v in batch_data.edge]))
+        #     # a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]
+        #     # print(a)
+        #     # break
+        # unique_batch_indices = torch.unique(batch_data.batch)
+        # for batch_index in unique_batch_indices:
+        #     subgraph = batch_data.get_example(batch_index)
+        #     print(subgraph)
                 
-        break
+        # break
             

@@ -1,4 +1,4 @@
-from transformers import BertTokenizer, BertModel
+from transformers import AutoTokenizer, LlamaModel
 import torch
 
 class Tokenizer():
@@ -18,8 +18,8 @@ class Tokenizer():
         self.__the_way_of_token_emb = the_way_of_token_emb
         self.__the_way_of_fussion_node_emb = the_way_of_fussion_node_emb
         self.__node_emb_alpha = node_emb_alpha
-        self.tokenizer = BertTokenizer.from_pretrained(self.__llm_model)
-        self.model = BertModel.from_pretrained(self.__llm_model).to(self.__device)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.__llm_model)
+        self.model = LlamaModel.from_pretrained(self.__llm_model).to(self.__device)
         self.embedding_size = self.model.config.hidden_size
         self.__init_params()
 
@@ -32,6 +32,7 @@ class Tokenizer():
                      '[sign-loop]': "cyclic signal words"}
         # 添加新token
         self.tokenizer.add_tokens(list(new_token.keys()), special_tokens=True)
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model.resize_token_embeddings(len(self.tokenizer))
         self.__new_token_dict = new_token 
         self.__new_token_size = len(new_token)
@@ -46,8 +47,8 @@ class Tokenizer():
             self.model.resize_token_embeddings(len(self.tokenizer))
         elif self.__the_way_of_emb_new_token == 'zero':
             with torch.no_grad():
-                # self.model.embeddings.word_embeddings.weight[-self.__new_token_size:].fill_(0)
-                self.model.embeddings.word_embeddings.weight[-self.__new_token_size:, :] = torch.zeros([self.__new_token_size, self.model.config.hidden_size], requires_grad=True)
+                # self.model.embed_tokens.weight[-self.__new_token_size:].fill_(0)
+                self.model.embed_tokens.weight[-self.__new_token_size:, :] = torch.zeros([self.__new_token_size, self.model.config.hidden_size], requires_grad=True)
         elif self.__the_way_of_emb_new_token == 'copy':
             pass
         elif self.__the_way_of_emb_new_token == 'mean':
@@ -55,9 +56,9 @@ class Tokenizer():
                 for i, (k, v) in enumerate(reversed(self.__new_token_dict.items()), start=1):
                     tokenized = self.tokenizer.tokenize(v)
                     tokenized_ids = self.tokenizer.convert_tokens_to_ids(tokenized)
-                    new_token_emb = self.model.embeddings.word_embeddings.weight[tokenized_ids].mean(axis=0)
-                    self.model.embeddings.word_embeddings.weight[-i, :] = new_token_emb.clone().detach().requires_grad_(True)
-        # print(self.model.embeddings.word_embeddings.weight[-6:, :])
+                    new_token_emb = self.model.embed_tokens.weight[tokenized_ids].mean(axis=0)
+                    self.model.embed_tokens.weight[-i, :] = new_token_emb.clone().detach().requires_grad_(True)
+        # print(self.model.embed_tokens.weight[-6:, :])
 
     def __node_emb_fussion(self, node_emb:list[torch.FloatTensor], node_type_emb:list[torch.FloatTensor]):
         '''
