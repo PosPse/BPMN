@@ -25,19 +25,37 @@ class GCN(nn.Module):
 class GraphSage(nn.Module):
     def __init__(self, hidden_size, node_num_classes=6, aggr='mean'):
         super(GraphSage, self).__init__()
-        self.conv1 = SAGEConv(768, hidden_size, aggr)
-        self.conv2 = SAGEConv(hidden_size, hidden_size, aggr)
-        self.conv3 = SAGEConv(hidden_size, node_num_classes, aggr)
+        # self.conv1 = SAGEConv(768, hidden_size, aggr)
+        # self.conv2 = SAGEConv(hidden_size, hidden_size, aggr)
+        # self.conv3 = SAGEConv(hidden_size, node_num_classes, aggr)
+        self.conv1 = SAGEConv(768, 1536, aggr)
+        self.conv3 = SAGEConv(1536, 768, aggr)
+        self.conv4 = SAGEConv(768, 384, aggr)
+        self.conv5 = SAGEConv(384, 128, aggr)
+        self.conv6 = SAGEConv(128, node_num_classes, aggr)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
+        # x = self.conv1(x, edge_index)
+        # x = F.relu(x)
+        # x = F.dropout(x, training=self.training)
+        # x = self.conv2(x, edge_index) 
+        # x = F.dropout(x, training=self.training)
+        # x = F.relu(x)
+        # out = self.conv3(x, edge_index)
         x = self.conv1(x, edge_index)
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index) 
-        x = F.dropout(x, training=self.training)
+        x = self.conv3(x, edge_index)
         x = F.relu(x)
-        out = self.conv3(x, edge_index)
+        x = F.dropout(x, training=self.training)
+        x = self.conv4(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training)
+        x = self.conv5(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training)
+        out = self.conv6(x, edge_index)
         return x, out
     
 class GAT(nn.Module):

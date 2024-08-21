@@ -4,6 +4,7 @@ from get_embs import Tokenizer
 import torch
 import Parser as Parser
 from scipy.linalg import block_diag
+from focal_loss import FocalLossWithBinaryCrossEntropy, FocalLossWithCrossEntropy
 
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
@@ -20,10 +21,12 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
-weight = [5 for _ in range(10)]
+weight = [10 for _ in range(10)]
 weight[0] = 1
-weight = torch.tensor(weight, dtype=torch.float32)
+weight = torch.tensor(weight, dtype=torch.float32).to(device)
 edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
+# edge_criterion = FocalLossWithBinaryCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
+# edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
 alpha = 0.5
 def train():
     for epoch in range(args.epochs):
@@ -41,7 +44,6 @@ def train():
             node_embedding, node_output = node_model(batch_data)
             node_loss = node_criterion(node_output, batch_data.y)
             edge_output = edge_model(node_embedding, batch_data)
-            # print(edge_output.shape, edge_y.shape)
             edge_loss = edge_criterion(edge_output, edge_y)
             loss = alpha * node_loss + (1-alpha)*edge_loss
             LOSS += loss.item()

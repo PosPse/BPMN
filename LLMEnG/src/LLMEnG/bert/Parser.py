@@ -11,12 +11,13 @@ parser.add_argument("--batch_size", type=int, default="1", help="批量大小")
 parser.add_argument("--shuffle", type=bool, default="False", help="是否打乱数据")
 # 模型
 parser.add_argument("--node_num_classes", type=int, default="6", help="节点分类数量")
+parser.add_argument("--edge_num_classes", type=int, default="10", help="边分类数量")
 parser.add_argument("--fusion_method", type=str, default="concat", help="节点融合方法")
 # 训练
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--aggr", type=str, default="mean", choices=['mean', 'lstm'], help="聚合函数")
-parser.add_argument("--lr", type=float, default="0.005", help="学习率")
-parser.add_argument("--epochs", type=int, default="10", help="训练轮数")
+parser.add_argument("--lr", type=float, default="0.01", help="学习率")
+parser.add_argument("--epochs", type=int, default="50", help="训练轮数")
 
 # 模型
 parser.add_argument("--llm_model", type=str, default="/home/btr/bpmn/model/safetensors/bert-base-uncased", help="LLM模型路径")

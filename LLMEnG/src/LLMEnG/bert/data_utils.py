@@ -218,7 +218,8 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[:50]
+        # dataset = self.__datasets[:50]
+        dataset = self.__datasets
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def get_test_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
@@ -227,7 +228,8 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[50:]
+        # dataset = self.__datasets[50:]
+        dataset = self.__datasets
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 import Parser
 
