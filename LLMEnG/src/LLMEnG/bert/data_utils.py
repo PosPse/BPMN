@@ -96,7 +96,7 @@ class DataCenter():
         dataset = []
         for raw_data in tqdm(self.__datasets_RawData_list):
             # print(raw_data.filename)
-            x = self.__tokenizer.node2embedding(node_token=raw_data.node_token_list, node_token_type=raw_data.data_2_mask_single_signal_llm)
+            x = self.__tokenizer.node2embedding(node_token=raw_data.node_token_list)
             edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
             num_nodes = len(raw_data.data_2_mask_single_signal_llm)

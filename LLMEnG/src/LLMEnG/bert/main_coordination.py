@@ -12,8 +12,8 @@ tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
 data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
 tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
 test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
-# node_model = GCN(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
-node_model = GraphSage(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
+node_model = GCN(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
+# node_model = GraphSage(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
 # node_model = GAT(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_optimizer = torch.optim.SGD(node_model.parameters(), lr=args.lr)
 node_criterion = torch.nn.CrossEntropyLoss().to(device)
@@ -24,9 +24,9 @@ edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 weight = [10 for _ in range(10)]
 weight[0] = 1
 weight = torch.tensor(weight, dtype=torch.float32).to(device)
-edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
+# edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
 # edge_criterion = FocalLossWithBinaryCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
-# edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
+edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
 alpha = 0.5
 def train():
     for epoch in range(args.epochs):

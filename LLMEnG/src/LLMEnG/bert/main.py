@@ -21,7 +21,7 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 # node_model.eval()
 
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
-edge_model = EdgeClassification(hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
+edge_model = EdgeClassification(device=device,hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
 weight = [10 for _ in range(10)]
 weight[0] = 1
@@ -73,12 +73,14 @@ def edge_train():
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
                 subgraph = batch_data.get_example(batch_index)
-                node_embedding, _ = node_model(subgraph)
+                node_embedding, node_output = node_model(subgraph)
                 # node_embedding = subgraph.x.to(device)
-                output = edge_model(node_embedding, subgraph)
+                node_pred = node_output.argmax(dim=1)
+                node_type_pred_emb = tokenizer.node_type_emb[node_pred]
+                edge_output = edge_model(node_embedding, subgraph, node_type_pred_emb)
                 # edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
                 edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
-                loss = edge_criterion(output, edge_y)
+                loss = edge_criterion(edge_output, edge_y)
                 LOSS += loss.item()
                 loss.backward()
                 edge_optimizer.step()
@@ -102,20 +104,22 @@ def edge_test():
                 subgraph = batch_data.get_example(batch_index)
                 edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
 
-                node_embedding, _ = node_model(subgraph)
+                node_embedding, node_output = node_model(subgraph)
+                node_pred = node_output.argmax(dim=1)
+                node_type_pred_emb = tokenizer.node_type_emb[node_pred]
 
-                output = edge_model(node_embedding, subgraph)
-                pred = output.argmax(dim=1)
+                edge_output = edge_model(node_embedding, subgraph, node_type_pred_emb)
+                edge_pred = edge_output.argmax(dim=1)
                 edge_num += len(edge_y)
-                edge_correct_pred_num += torch.sum(pred == edge_y)
+                edge_correct_pred_num += torch.sum(edge_pred == edge_y)
 
                 non_zero_indices = edge_y.nonzero().view(-1)
                 positive_edge_num += len(non_zero_indices)
-                positive_edge_correct_pred_num += torch.sum(pred[non_zero_indices] == edge_y[non_zero_indices])
+                positive_edge_correct_pred_num += torch.sum(edge_pred[non_zero_indices] == edge_y[non_zero_indices])
 
                 zero_indices = (edge_y == 0).nonzero().view(-1)
                 negative_edge_num += len(zero_indices)
-                negative_edge_correct_pred_num += torch.sum(pred[zero_indices] == edge_y[zero_indices])
+                negative_edge_correct_pred_num += torch.sum(edge_pred[zero_indices] == edge_y[zero_indices])
 
         edge_accurcy = edge_correct_pred_num / edge_num
         positive_edge_accurcy = positive_edge_correct_pred_num / positive_edge_num
