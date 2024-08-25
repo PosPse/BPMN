@@ -15,8 +15,8 @@ class FocalLossWithBinaryCrossEntropy(nn.Module):
         """
         super(FocalLossWithBinaryCrossEntropy, self).__init__()
         self.device = device
-        # self.alpha = alpha
-        self.alpha = nn.Parameter(torch.tensor([1, 10, 10, 10, 10, 10, 10, 10, 10, 10], dtype=torch.float32)).to(device)
+        self.alpha = alpha
+        # self.alpha = nn.Parameter(torch.tensor([1, 10, 10, 10, 10, 10, 10, 10, 10, 10], dtype=torch.float32)).to(device)
         self.gamma = gamma
         self.reduction = reduction
         self.edge_num_classes = edge_num_classes

@@ -144,7 +144,13 @@ class DataCenter():
         cur_adj_lists = sorted(cur_adj_lists, key=lambda x: x[1])
         return cur_adj_lists
     
+    def __modify_edge_index(self, edge_index:list[list[int]], num_nodes:int) -> list[list[int]]:
+        pass
+    
     def __generate_y(self, data_2_mask_single_signal_llm:list[str]) -> list[int]:
+        '''
+            生成节点标签
+        '''
         def get_y_category(token:str) -> int:
             if token == '[activity]':
                 return NodeType.Activity.value
@@ -218,8 +224,8 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        # dataset = self.__datasets[:50]
-        dataset = self.__datasets
+        dataset = self.__datasets[:50]
+        # dataset = self.__datasets
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     
     def get_test_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
@@ -228,8 +234,8 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        # dataset = self.__datasets[50:]
-        dataset = self.__datasets
+        dataset = self.__datasets[50:]
+        # dataset = self.__datasets
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 import Parser
 

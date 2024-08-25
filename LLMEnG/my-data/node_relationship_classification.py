@@ -7,8 +7,7 @@ def get_llm_response():
     with open('/home/btr/bpmn/LLMEnG/my-data/datasets5.json', 'r') as f:
         dataset_list = json.load(f)
 
-    for i in tqdm(range(1, len(dataset_list))):
-        dataset = dataset_list[i]
+    for dataset in tqdm(dataset_list):
         node_token_list = dataset['node_token_list']
         node_to_text = ''
         for i, node_token in enumerate(node_token_list):
@@ -30,27 +29,26 @@ def get_llm_response():
     ##Response
     The result is output in JSON format, including two items: "result" and "explain". The value of "result" is 0 or 1. If there is a directly connected edge, it is 1, otherwise it is 0. "explain" is the explanation of the result. You only need to output the results according to the format, and there is no need to output any redundant content.
     '''
-                url = 'http://localhost:11434/api/generate'
-                data = {
-                'model': 'llama3.1:70b',
-                'prompt': prompt,
-                'format': 'json',
-                'stream': False,
-                }
-                try:
-                    print(dataset['filename'], len(node_token_list), i, j)
-                    response = requests.post(url, json=data)
-                    result = response.json()['response']
-                    result = json.loads(result)['result']
-                    relation_matrix[i][j] = int(result)
-                    relation_matrix[j][i] = int(result)
-                except:
-                    dataset_list_json = json.dumps(dataset_list)
-                    with open('/home/btr/bpmn/LLMEnG/my-data/datasets7.json', 'w') as f:
-                        f.write(dataset_list_json)
-                    return
+                while True:
+                    url = 'http://localhost:11434/api/generate'
+                    data = {
+                    'model': 'llama3.1:latest',
+                    'prompt': prompt,
+                    'format': 'json',
+                    'stream': False,
+                    }
+                    try:
+                        print(dataset['filename'], len(node_token_list), i, j)
+                        response = requests.post(url, json=data)
+                        result = response.json()['response']
+                        result = json.loads(result)['result']
+                        relation_matrix[i][j] = int(result)
+                        relation_matrix[j][i] = int(result)
+                        break
+                    except:
+                        pass
         dataset['relation_matrix'] = relation_matrix
     dataset_list_json = json.dumps(dataset_list)
-    with open('/home/btr/bpmn/LLMEnG/my-data/datasets7.json', 'w') as f:
+    with open('/home/btr/bpmn/LLMEnG/my-data/datasets6-llama3.1-8B-2.json', 'w') as f:
         f.write(dataset_list_json)
 get_llm_response()

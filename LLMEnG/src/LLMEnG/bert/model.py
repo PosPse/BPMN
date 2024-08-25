@@ -82,6 +82,52 @@ class GAT(nn.Module):
         x = self.conv2(x, edge_index)
         # x = F.log_softmax(x, dim=1)
         return x
+
+class Attention(nn.Module):
+    def __init__(self, hidden_size):
+        super(Attention, self).__init__()
+        self.hidden_size = hidden_size
+        self.attention_layer = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        num_features, batch_size, feature_dim = x.shape
+
+        attention_weights = self.attention_layer(x.view(-1, feature_dim))
+        attention_weights = torch.tanh(attention_weights)
+        attention_weights = F.softmax(attention_weights.view(num_features, batch_size), dim=0)
+
+        return torch.sum(x * attention_weights.unsqueeze(-1), dim=0)
+    
+class FeatureFusionAttention(nn.Module):
+    def __init__(self, feature_dim):
+        super(FeatureFusionAttention, self).__init__()
+        self.feature_dim = feature_dim
+        
+        self.query = nn.Linear(feature_dim, feature_dim)
+        self.key = nn.Linear(feature_dim, feature_dim)
+        self.value = nn.Linear(feature_dim, feature_dim)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        # x shape: (num_features, batch_size, feature_dim)
+        batch_size = x.size(1)
+        
+        x = x.permute(1, 0, 2)  # (batch_size, num_features, feature_dim)
+
+        query = self.query(x)  
+        key = self.key(x)      
+        value = self.value(x)  
+
+        attention_scores = torch.bmm(query, key.permute(0, 2, 1))  
+        attention_weights = self.softmax(attention_scores)  
+
+        fused_features = torch.bmm(attention_weights, value)  
+
+        # 将融合特征聚合成 (batch_size, feature_dim)
+        output = torch.mean(fused_features, dim=1)  # 或使用 torch.max等其他方法
+
+        return output
+        
     
 class EdgeFusion(nn.Module):
     def __init__(self, hidden_size, fusion_method='concat'):
@@ -92,10 +138,13 @@ class EdgeFusion(nn.Module):
         self.src_node_type_linear2 = nn.Linear(384, hidden_size)
         self.dst_node_type_linear1 = nn.Linear(768, 384)
         self.dst_node_type_linear2 = nn.Linear(384, hidden_size)
+        self.attention_layer = FeatureFusionAttention(hidden_size)
 
     def forward(self, src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb):
         if self.fusion_method == 'concat':
             return self.concat(src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb)
+        elif self.fusion_method == 'attention':
+            return self.attention(src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb)
 
     def concat(self, src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb):
         src_node_type_emb = self.src_node_type_linear1(src_node_type_emb)
@@ -110,12 +159,27 @@ class EdgeFusion(nn.Module):
 
         # with torch.no_grad():
         return torch.cat((src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb), dim=1)
+    
+    def attention(self, src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb):
+        src_node_type_emb = self.src_node_type_linear1(src_node_type_emb)
+        src_node_type_emb = F.relu(src_node_type_emb)
+        src_node_type_emb = F.dropout(src_node_type_emb, training=self.training)
+        src_node_type_emb = self.src_node_type_linear2(src_node_type_emb)
+
+        dst_node_type_emb = self.dst_node_type_linear1(dst_node_type_emb)
+        dst_node_type_emb = F.relu(dst_node_type_emb)
+        dst_node_type_emb = F.dropout(dst_node_type_emb, training=self.training)
+        dst_node_type_emb = self.dst_node_type_linear2(dst_node_type_emb)
+
+        edge_emb = torch.stack([src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb], dim=0)
+        return self.attention_layer(edge_emb)
 
 class EdgeClassification(nn.Module):
     def __init__(self, device, hidden_size, edge_fusion, edge_num_classes=10):
         super(EdgeClassification, self).__init__()
         self.device = device
         self.hidden_size = hidden_size * 5
+        # self.hidden_size = hidden_size
         self.edge_fusion = edge_fusion
         self.edge_num_classes = edge_num_classes
         self.linear1 = nn.Linear(self.hidden_size, 256)
@@ -158,7 +222,7 @@ class EdgeClassification(nn.Module):
         dst_node_emb = torch.stack(dst_node_emb, dim=0)
         src_node_type_emb = torch.stack(src_node_type_emb, dim=0)
         dst_node_type_emb = torch.stack(dst_node_type_emb, dim=0)
-        src_2_dst_distance_emb = self.distance_Z_score_emb(src_2_dst_distance)
+        src_2_dst_distance_emb = self.distance_MinMaxScaler_emb(src_2_dst_distance)
 
         fused_node = self.edge_fusion(src_node_emb, dst_node_emb, src_node_type_emb, dst_node_type_emb, src_2_dst_distance_emb)
         edge_feature = self.linear1(fused_node)

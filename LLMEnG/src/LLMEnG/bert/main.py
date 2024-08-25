@@ -27,8 +27,8 @@ weight = [10 for _ in range(10)]
 weight[0] = 1
 weight = torch.tensor(weight, dtype=torch.float32).to(device)
 # edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
-edge_criterion = FocalLossWithBinaryCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
-# edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
+# edge_criterion = FocalLossWithBinaryCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
+edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
 
 def node_train():
     for epoch in range(args.epochs):
@@ -50,7 +50,7 @@ def node_test():
     with torch.no_grad():
         correct_pred_num = 0
         node_num = 0
-        for batch_data in tarin_dataloader:
+        for batch_data in test_dataloader:
             batch_data = batch_data.to(device)
             _, output = node_model(batch_data)
             pred = output.argmax(dim=1)
@@ -97,7 +97,7 @@ def edge_test():
         edge_num = 0
         positive_edge_num = 0
         negative_edge_num = 0
-        for batch_data in tarin_dataloader:
+        for batch_data in test_dataloader:
             batch_data = batch_data.to(device)
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
