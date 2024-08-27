@@ -49,6 +49,6 @@ def get_llm_response():
                         pass
         dataset['relation_matrix'] = relation_matrix
     dataset_list_json = json.dumps(dataset_list)
-    with open('/home/btr/bpmn/LLMEnG/my-data/datasets6-llama3.1-8B-2.json', 'w') as f:
+    with open('/home/btr/bpmn/LLMEnG/my-data/datasets6-llama3.1-8B-3.json', 'w') as f:
         f.write(dataset_list_json)
 get_llm_response()
