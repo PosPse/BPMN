@@ -32,7 +32,7 @@ def get_llm_response():
                 while True:
                     url = 'http://localhost:11434/api/generate'
                     data = {
-                    'model': 'llama3.1:latest',
+                    'model': 'llama3.1:70b',
                     'prompt': prompt,
                     'format': 'json',
                     'stream': False,
@@ -49,6 +49,6 @@ def get_llm_response():
                         pass
         dataset['relation_matrix'] = relation_matrix
     dataset_list_json = json.dumps(dataset_list)
-    with open('/home/btr/bpmn/LLMEnG/my-data/datasets6-llama3.1-8B-3.json', 'w') as f:
+    with open('/home/btr/bpmn/LLMEnG/my-data/datasets7-llama3.1-70B-2.json', 'w') as f:
         f.write(dataset_list_json)
 get_llm_response()
