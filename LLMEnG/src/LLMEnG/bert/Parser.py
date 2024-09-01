@@ -17,7 +17,7 @@ parser.add_argument("--fusion_method", type=str, default="concat", choices=['con
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--aggr", type=str, default="mean", choices=['mean', 'lstm'], help="GraphSAGE聚合函数")
 parser.add_argument("--lr", type=float, default="0.01", help="学习率")
-parser.add_argument("--epochs", type=int, default="150", help="训练轮数")
+parser.add_argument("--epochs", type=int, default="10", help="训练轮数")
 
 # 模型
 parser.add_argument("--llm_model", type=str, default="/home/btr/bpmn/model/safetensors/bert-base-uncased", help="LLM模型路径")

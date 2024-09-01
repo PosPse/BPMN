@@ -45,3 +45,183 @@ Determine whether node 1 and node 3 have directly connected edges based on the n
 
 ##Response
 The result is output in JSON format, including two items: "result" and "explain". The value of "result" is 0 or 1. If there is a directly connected edge, it is 1, otherwise it is 0. "explain" is the explanation of the result. You only need to output the results according to the format, and there is no need to output any redundant content.
+
+
+
+
+I want to generate a Procedural Graph based on Procedural Document. To accurately generate a Procedural Graph, I use a NER tool to identify activities, signal words indicating branches, and conditions in the Procedural Document. They are arranged in the order in the Procedural Document. Each item is represented as "{id}: {text}", where id represents the graph node identifier and text represents the text information corresponding to the graph node.
+You should generate a Procedural Graph line by line in the form of "[src_id, tgt_id]" until the last item, and keep the text of the nodes, signal words, and conditions consistent with the original program document.
+
+Here are some examples:
+
+###
+"Procedural Document":
+The credit company receives the credit information from the customer , If the requested amount is greater than 1M $ an approval must be requested . If the requested amount is lower or equal to 1M $ the company assess the risk of the credit . After the assessment , if the risk is high , an approval must be requested ; but if the risk is low the credit is accepted . After the approval request , the credit could be accepted or rejected ; in both cases , an email is sent to the customer.
+
+###
+"NER results":
+0: "The credit company receives the credit information from the customer",
+1: "If",
+2: "the requested amount is greater than 1M $",
+3: "an approval must be requested",
+4: "If",
+5: "the requested amount is lower or equal to 1M $",
+6: "the company assess the risk of the credit",
+7: "After",
+8: "the assessment",
+9: "if",
+10: "the risk is high",
+11: "an approval must be requested",
+12: "but if",
+13: "the risk is low",
+14: "the credit is accepted",
+15: "After",
+16: "the approval request",
+17: "the credit could be accepted or rejected",
+18: "in both cases",
+19: "an email is sent to the customer"
+
+###
+"Procedural Graph":
+[0, 1],
+[1, 2],
+[2, 3],
+[0, 4],
+[4, 5],
+[5, 6],
+[6, 7],
+[7, 8],
+[8, 9],
+[9, 10],
+[10, 11],
+[9, 12],
+[12, 13],
+[13, 14],
+[3, 15],
+[11, 15],
+[15, 16],
+[16, 17],
+[17, 18],
+[18, 19]
+
+###
+"Procedural Document":
+If a not collected bag is identified , CVS must check the number of resolution retries conducted . If the number of retries is greater than an specified number , the bag must be returned to the production area for disassemble ; in all other cases , CVS must try to contact the customer by phone and remind to pick up the bag . If the contact is successful and the customer withdrawn the order , the bag must be returned to the production area for disassemble , but if it is successful and the customer promises to pick up the bag , CVS must increase the retry count on the bag label . Also , this number must be increased if the contact is unsuccessful .
+
+###
+"NER results":
+0: "If",
+1: "a not collected bag is identified",
+2: "CVS must check the number of resolution retries conducted",
+3: "If",
+4: "the number of retries is greater than an specified number",
+5: "the bag must be returned to the production area for disassemble",
+6: "in all other cases",
+7: "CVS must try to contact the customer by phone and remind to pick up the bag",
+8: "If",
+9: "the contact is successful and the customer withdrawn the order",
+10: "the bag must be returned to the production area for disassemble",
+11: "but if",
+12: "it is successful and the customer promises to pick up the bag",
+13: "CVS must increase the retry count on the bag label",
+14: "Also",
+15: "this number must be increased",
+16: "if",
+17: "the contact is unsuccessful"
+
+###
+"Procedural Document":
+If a not collected bag is identified , CVS must check the number of resolution retries conducted . If the number of retries is greater than an specified number , the bag must be returned to the production area for disassemble ; in all other cases , CVS must try to contact the customer by phone and remind to pick up the bag . If the contact is successful and the customer withdrawn the order , the bag must be returned to the production area for disassemble , but if it is successful and the customer promises to pick up the bag , CVS must increase the retry count on the bag label . Also , this number must be increased if the contact is unsuccessful .
+
+###
+"NER results":
+0: "If",
+1: "a not collected bag is identified",
+2: "CVS must check the number of resolution retries conducted",
+3: "If",
+4: "the number of retries is greater than an specified number",
+5: "the bag must be returned to the production area for disassemble",
+6: "in all other cases",
+7: "CVS must try to contact the customer by phone and remind to pick up the bag",
+8: "If",
+9: "the contact is successful and the customer withdrawn the order",
+10: "the bag must be returned to the production area for disassemble",
+11: "but if",
+12: "it is successful and the customer promises to pick up the bag",
+13: "CVS must increase the retry count on the bag label",
+14: "Also",
+15: "this number must be increased",
+16: "if",
+17: "the contact is unsuccessful"
+
+###
+"Procedural Graph":
+[0, 1],
+[1, 2],
+[2, 3],
+[3, 4],
+[4, 5],
+[2, 6],
+[6, 7],
+[7, 8],
+[8, 9],
+[9, 10],
+[7, 11],
+[11, 12],
+[12, 13],
+[7, 14],
+[14, 15],
+[15, 16],
+[16, 17]
+
+Now you need to generate the corresponding Procedural Graph of the following Procedural Document and NER results (Note that the result output in JSON format only contains the "result" field. No other redundant content is allowed.):
+
+###
+"Procedural Document":
+As soon as an employee files an expense report the process is started . Once the expense report is received a check is performed to make sure the employee has an account . If this check does not take place within 28 days , the process is stopped and the employee is sent a ' resubmit ' email . When the employee has an account the report is reviewed . If the employee does not have an account , an account is created after which the report is reviewed . A check is performed to see if the amount of the expense exceeds 200 . If it does not exceed 200 , the employee is reimbursed through a deposit directly to the employee 's bank account and the process is ended . In the case that it does exceed 200 , a supervisor is asked for approval . Three things can happen after this . First , the supervisor approves within 7 days , this will result in the deposit of the reimbursement directly to the employee 's bank account . Once this is done the process is ended . Second , the supervisor rejects within 7 days , as a result the employee receives a notification through email that the request has been rejected . Third , if it takes the supervisor more than 7 days to respond , an email is sent to the employee informing him / her that the approval is in progress and the part of the processes after a supervisor is asked for approval is repeated.
+
+###
+"NER results":
+0: "As soon as"
+1: "an employee files an expense report"
+2: "the process is started"
+3: "Once"
+4: "the expense report is received"
+5: "a check is performed to make sure the employee has an account"
+6: "If"
+7: "this check does not take place within 28 days"
+8: "the process is stopped and the employee is sent a ' resubmit ' email"
+9: "When"
+10: "the employee has an account"
+11: "the report is reviewed"
+12: "If"
+13: "the employee does not have an account"
+14: "an account is created"
+15: "after"
+16: "which"
+17: "the report is reviewed"
+18: "A check is performed to see if the amount of the expense exceeds 200"
+19: "If"
+20: "it does not exceed 200"
+21: "the employee is reimbursed through a deposit directly to the employee 's bank account and the process is ended"
+22: "In the case that"
+23: "it does exceed 200"
+24: "a supervisor is asked for approval"
+25: "Three things can happen after this"
+26: "First"
+27: "the supervisor approves within 7 days"
+28: "this will result in"
+29: "the deposit of the reimbursement directly to the employee 's bank account"
+30: "Once"
+31: "this is done"
+32: "the process is ended"
+33: "Second"
+34: "the supervisor rejects within 7 days"
+35: "as a result"
+36: "the employee receives a notification through email that the request has been rejected"
+37: "Third if"
+38: "it takes the supervisor more than 7 days to respond"
+39: "an email is sent to the employee informing him / her that the approval is in progress and the part of the processes after a supervisor is asked for approval is repeated"
+
+###
+"Procedural Graph":
