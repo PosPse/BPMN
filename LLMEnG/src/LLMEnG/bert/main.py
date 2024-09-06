@@ -4,6 +4,7 @@ from get_embs import Tokenizer
 from focal_loss import FocalLossWithBinaryCrossEntropy, FocalLossWithCrossEntropy
 import torch
 import Parser as Parser
+import math
 
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
@@ -19,11 +20,11 @@ node_criterion = torch.nn.CrossEntropyLoss().to(device)
 
 # node_model = torch.load('/home/btr/bpmn/LLMEnG/src/node_model.pth', map_location=device)
 # node_model.eval()
-
 edge_fusion_model = EdgeFusion(hidden_size=args.hidden_size, fusion_method=args.fusion_method).to(device)
 edge_model = EdgeClassification(device=device,hidden_size=args.hidden_size, edge_fusion = edge_fusion_model).to(device)
 edge_optimizer = torch.optim.SGD(edge_model.parameters(), lr=args.lr)
-weight = [10 for _ in range(10)]
+# edge_scheduler = torch.optim.lr_scheduler.StepLR(edge_optimizer, step_size=50, gamma=0.98)
+weight = [11 for _ in range(11)]
 weight[0] = 1
 weight = torch.tensor(weight, dtype=torch.float32).to(device)
 # edge_criterion = torch.nn.CrossEntropyLoss(weight=weight).to(device)
@@ -50,7 +51,7 @@ def node_test():
     with torch.no_grad():
         correct_pred_num = 0
         node_num = 0
-        for batch_data in test_dataloader:
+        for batch_data in tarin_dataloader:
             batch_data = batch_data.to(device)
             _, output = node_model(batch_data)
             pred = output.argmax(dim=1)
@@ -84,6 +85,7 @@ def edge_train():
                 LOSS += loss.item()
                 loss.backward()
                 edge_optimizer.step()
+                # edge_scheduler.step()
         print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
         edge_test()
 
@@ -97,7 +99,7 @@ def edge_test():
         edge_num = 0
         positive_edge_num = 0
         negative_edge_num = 0
-        for batch_data in test_dataloader:
+        for batch_data in tarin_dataloader:
             batch_data = batch_data.to(device)
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:

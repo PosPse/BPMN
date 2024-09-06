@@ -16,7 +16,7 @@ class FocalLossWithBinaryCrossEntropy(nn.Module):
         super(FocalLossWithBinaryCrossEntropy, self).__init__()
         self.device = device
         self.alpha = alpha
-        # self.alpha = nn.Parameter(torch.tensor([1, 10, 10, 10, 10, 10, 10, 10, 10, 10], dtype=torch.float32)).to(device)
+        # self.alpha = nn.Parameter(torch.tensor([1, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10], dtype=torch.float32)).to(device)
         self.gamma = gamma
         self.reduction = reduction
         self.edge_num_classes = edge_num_classes
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     inputs = torch.randn(5, args.edge_num_classes).to(device)  # 假设batch_size=10，num_classes=10
     targets = torch.tensor([1, 0, 4, 1, 3], dtype=torch.long).to(device)   # 类别
-    alpha_values = torch.tensor([0.25, 0.5, 1.0, 2.0, 4.0, 0.25, 0.5, 1.0, 2.0, 4.0], dtype=torch.float32).to(device)  # 类别对应的alpha值
+    alpha_values = torch.tensor([0.25, 0.5, 1.0, 2.0, 4.0, 0.25, 0.5, 1.0, 2.0, 4.0, 5.0], dtype=torch.float32).to(device)  # 类别对应的alpha值
 
     # 实例化FocalLoss
     focal_loss = FocalLossWithBinaryCrossEntropy(device=device, alpha=alpha_values, gamma=2, reduction='mean')

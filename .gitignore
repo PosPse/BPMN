@@ -10,6 +10,7 @@ rust/
 code/
 cpp/
 rust/
+whale-quant/
 regen-main/
 RL4LMs-main/
 NER/model/stanford-corenlp-4.5.5/
@@ -24,6 +25,7 @@ AIHomework/final_work/captions.txt
 *.pth
 PAGED/dataset/image
 PAGED/dataset/bpmai
+LLMEnG/my-data/image
 
 !/NER/package/en_core_web_sm-3.7.1.tar.gz
 !/NER/package/pytorch-crf-0.7.2.tar.gz

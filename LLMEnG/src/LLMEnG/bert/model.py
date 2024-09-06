@@ -175,7 +175,7 @@ class EdgeFusion(nn.Module):
         return self.attention_layer(edge_emb)
 
 class EdgeClassification(nn.Module):
-    def __init__(self, device, hidden_size, edge_fusion, edge_num_classes=10):
+    def __init__(self, device, hidden_size, edge_fusion, edge_num_classes=11):
         super(EdgeClassification, self).__init__()
         self.device = device
         self.hidden_size = hidden_size * 5
