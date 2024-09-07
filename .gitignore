@@ -7,9 +7,6 @@
 *.pyc
 .idea/
 rust/
-code/
-cpp/
-rust/
 whale-quant/
 regen-main/
 RL4LMs-main/

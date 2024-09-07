@@ -37,6 +37,9 @@ class Dataset(Dataset):
     def __getitem__(self, index):
         return self.dataset[index]
     
+    def __setitem__(self, index, item):
+        self.dataset[index] = item
+    
     def __len__(self):
         return len(self.dataset)
 
@@ -70,13 +73,19 @@ class RawData():
 # node_token_list: {self.node_token_list}\n'''
 
 class DataCenter():
-    def __init__(self, datasets_json:str, tokenizer:Tokenizer) -> None:
+    def __init__(self, datasets_json:str, tokenizer:Tokenizer, method:str='none', add_scale:float=0.2, del_scale:float=0.2) -> None:
         '''
             datasets_json: str, 数据集json文件路径
             tokenizer: Tokenizer, 分词器
+            method: str, 修改边的方法
+            add_scale: float, 添加边的比例
+            del_scale: float, 删除边的比例
         '''
         self.__datasets_json:str = datasets_json
         self.__tokenizer:Tokenizer = tokenizer
+        self.__method:str = method
+        self.__add_scale:float = add_scale
+        self.__del_scale:float = del_scale
         self.__datasets_RawData_list:list[RawData] = None
         self.__datasets = None
         self.__init_params()
@@ -100,23 +109,18 @@ class DataCenter():
         for raw_data in tqdm(self.__datasets_RawData_list):
             # print(raw_data.filename)
             x = self.__tokenizer.node2embedding(node_token=raw_data.node_token_list)
-            orginal_edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
-            llm_edge_index = self.__generate_edge_index_2(raw_data.relation_matrix)
-            # edge_index = self.__modify_edge_index_add(orginal_edge_index, llm_edge_index, add_scale=0.2)
-            # edge_index = self.__modify_edge_index_del(orginal_edge_index, llm_edge_index, del_scale=0.2)
-            edge_index = self.__modify_edge_index_add_and_del(orginal_edge_index, llm_edge_index, add_scale=0.2, del_scale=0.2)
-            # edge_index = self.__generate_edge_index(raw_data.data_2_mask_single_signal_llm)
+            edge_index = self.__modify_edge_index(raw_data)
             y = self.__generate_y(raw_data.data_2_mask_single_signal_llm)
             num_nodes = len(raw_data.data_2_mask_single_signal_llm)
-            # edge_y = self.__generate_edge_y(edge_index=edge_index, num_nodes=num_nodes, y=y)
-            edge_y = self.__generate_edge_y_2(edge_index=raw_data.edge_index, num_nodes=num_nodes, y=y)
+            edge_y = self.__generate_edge_y(edge_index=raw_data.edge_index, num_nodes=num_nodes, y=y)
+
             edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
             y = torch.tensor(y, dtype=torch.long)
             edge_y = csr_matrix(edge_y)
             data = Data(x=x, edge_index=edge_index, y=y, raw_data=raw_data, edge_y=edge_y)
             dataset.append(data)
         return Dataset(dataset)
-    def __generate_edge_index(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
+    def __generate_edge_index_from_rule(self, data_2_mask_single_signal_llm:list[str]) -> list[list[int, int]]:
         '''
             生成邻接矩阵
             data_2_mask_single_signal_llm: list[str], 数据集数据
@@ -152,7 +156,7 @@ class DataCenter():
         cur_adj_lists = sorted(cur_adj_lists, key=lambda x: x[1])
         return cur_adj_lists
     
-    def __generate_edge_index_2(self, relation_matrix:list[list[int]]) -> list[list[int]]:
+    def __generate_edge_index_from_llm(self, relation_matrix:list[list[int]]) -> list[list[int]]:
         '''
             生成邻接矩阵
             relation_matrix: list[list[int]], 邻接矩阵
@@ -164,20 +168,25 @@ class DataCenter():
                     edge_index.append([i, j])
         edge_index = sorted(edge_index, key=lambda x: x[1])
         return edge_index
-
-    def __modify_edge_index(self, orginal_edge_index:list[list[int]], llm_edge_index:list[list[int]]) -> list[list[int]]:
-        if llm_edge_index == []:
-            edge_index = orginal_edge_index
-            edge_index = sorted(edge_index, key=lambda x: x[1])
-            return edge_index
-        orginal_edge_index = np.array(orginal_edge_index)
-        llm_edge_index = np.array(llm_edge_index)
-        edge_index = np.unique(np.vstack((orginal_edge_index, llm_edge_index)), axis=0).tolist()
-        edge_index = edge_index + orginal_edge_index.tolist()
-        edge_index = sorted(edge_index, key=lambda x: x[1])
         
-        return edge_index
-
+    def __modify_edge_index(self, raw_data:RawData):
+        relation_matrix = raw_data.relation_matrix
+        data_2_mask_single_signal_llm = raw_data.data_2_mask_single_signal_llm
+        llm_edge_index = self.__generate_edge_index_from_llm(relation_matrix)
+        orginal_edge_index = self.__generate_edge_index_from_rule(data_2_mask_single_signal_llm)
+        if self.__method == 'none':
+            return orginal_edge_index
+        elif self.__method == 'add':
+            edge_index = self.__modify_edge_index_add(orginal_edge_index, llm_edge_index, self.__add_scale)
+            return edge_index
+        elif self.__method == 'del':
+            edge_index = self.__modify_edge_index_del(orginal_edge_index, llm_edge_index, self.__del_scale)
+            return edge_index
+        elif self.__method == 'add_del':
+            edge_index = self.__modify_edge_index_add_and_del(orginal_edge_index, llm_edge_index, self.__add_scale, self.__del_scale)
+            return edge_index
+        else:
+            raise ValueError('Invalid method')
     def __modify_edge_index_add(self, orginal_edge_index:list[list[int]], llm_edge_index:list[list[int]], add_scale:float) -> list[list[int]]:
         '''
             在原始邻接矩阵基础上, 添加LLM生成的邻接矩阵
@@ -246,41 +255,6 @@ class DataCenter():
         y = [get_y_category(token) for token in data_2_mask_single_signal_llm]
         return y
 
-    def __generate_edge_y_2(self, edge_index:list[list[int]], num_nodes:int, y:list[int]) -> list[list[int]]:
-        '''
-            生成边标签
-            edge_index: 边索引
-            y: 节点标签
-        '''
-        def get_edge_y_category(node_i_type:int, node_j_type:int) -> int:
-            '''
-                none: 0
-                activity -> activity: 1 [0,0]
-                activity -> condition: 2 [0,1]
-                activity -> sign-successor: 3 [0,2]
-                activity -> sign-selection: 4 [0,3]
-                activity -> sign-parallel: 5 [0,4]
-                activity -> sign-loop: 6 [0,5]
-                condition -> sign-successor: 7 [1,2]
-                condition -> sign-selection: 8 [1,3]
-                condition -> sign-parallel: 9 [1,4]
-                condition -> sign-loop: 10 [1,5]
-            '''
-            edge_map = [[0,0], [0,1], [0,2],[0,3],[0,4],[0,5],[1,1],[1,2],[1,3],[1,4],[1,5]]
-            edge = [node_i_type, node_j_type]
-            edge.sort()
-            if edge not in edge_map:
-                return 0
-            return edge_map.index(edge) + 1
-        
-        edge_y = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
-        for node_i, node_j in edge_index:
-            node_i_type = y[node_i]
-            node_j_type = y[node_j]
-            edge_i_j_type = get_edge_y_category(node_i_type, node_j_type)
-            edge_y[node_i][node_j] = edge_i_j_type
-            edge_y[node_j][node_i] = edge_i_j_type
-        return edge_y
     def __generate_edge_y(self, edge_index:list[list[int]], num_nodes:int, y:list[int]) -> list[list[int]]:
         '''
             生成边标签
@@ -329,6 +303,17 @@ class DataCenter():
             edge_y[node_i][node_j] = edge_i_j_type
             edge_y[node_j][node_i] = edge_i_j_type
         return edge_y
+
+    def random_split(self, split_rate:float=0.8) -> None:
+        '''
+            随机划分训练集和测试集
+            split_rate: 划分比例
+        '''
+        random.shuffle(self.__datasets)
+        train_size = int(len(self.__datasets) * split_rate)
+        self.__train_datasets = self.__datasets[:train_size]
+        self.__test_datasets = self.__datasets[train_size:]
+        
                 
     def get_train_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
@@ -336,9 +321,9 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[:50]
-        # dataset = self.__datasets
-        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        # dataset = self.__datasets[:50]
+        # # dataset = self.__datasets
+        return DataLoader(self.__train_datasets, batch_size=batch_size, shuffle=shuffle)
     
     def get_test_dataloader(self, batch_size:int=1, shuffle:bool=True) -> DataLoader:
         '''
@@ -346,20 +331,21 @@ class DataCenter():
             batch_size: 批大小
             shuffle: 是否打乱
         '''
-        dataset = self.__datasets[50:]
-        # dataset = self.__datasets
-        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        # dataset = self.__datasets[50:]
+        # # dataset = self.__datasets
+        return DataLoader(self.__test_datasets, batch_size=batch_size, shuffle=shuffle)
 import Parser
 
 if __name__ == '__main__':
     args = Parser.args
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
     tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
-    data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
+    data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer, method=args.method, add_scale=args.add_scale, del_scale=args.del_scale)
+    data_center.random_split()
     tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
     test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
     for batch_data in test_dataloader:
-        print(batch_data)
+        print(batch_data.raw_data[0].filename)
         # print(batch_data.edge)
         # print(Batch.from_data_list([v for v in batch_data.edge]))
         #     # a = [torch.tensor(v.toarray(), dtype=torch.long).view(-1) for v in batch_data.edge_y]

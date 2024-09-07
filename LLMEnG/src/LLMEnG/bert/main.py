@@ -9,9 +9,8 @@ import math
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
 tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
-data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer)
-tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
-test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
+data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer, method=args.method, add_scale=args.add_scale, del_scale=args.del_scale)
+
 # node_model = GCN(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_model = GraphSage(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
 # node_model = GAT(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
@@ -31,27 +30,33 @@ weight = torch.tensor(weight, dtype=torch.float32).to(device)
 # edge_criterion = FocalLossWithBinaryCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
 edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2, reduction='mean')
 
-def node_train():
-    for epoch in range(args.epochs):
-        node_model.train()
-        LOSS = 0
-        for batch_data in tarin_dataloader:
-            node_optimizer.zero_grad()
-            batch_data = batch_data.to(device)
-            _, output = node_model(batch_data)
-            loss = node_criterion(output, batch_data.y)
-            LOSS += loss.item()
-            loss.backward()
-            node_optimizer.step()
-        print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
-        node_test()
 
-def node_test():
+def node_train_and_test():
+    for epoch in range(args.epochs):
+        data_center.random_split()
+        tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
+        test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
+        node_train(tarin_dataloader, epoch)
+        node_test(test_dataloader)
+def node_train(tarin_dataloader, epoch):
+    node_model.train()
+    LOSS = 0
+    for batch_data in tarin_dataloader:
+        node_optimizer.zero_grad()
+        batch_data = batch_data.to(device)
+        _, output = node_model(batch_data)
+        loss = node_criterion(output, batch_data.y)
+        LOSS += loss.item()
+        loss.backward()
+        node_optimizer.step()
+    print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
+
+def node_test(test_dataloader):
     node_model.eval()
     with torch.no_grad():
         correct_pred_num = 0
         node_num = 0
-        for batch_data in tarin_dataloader:
+        for batch_data in test_dataloader:
             batch_data = batch_data.to(device)
             _, output = node_model(batch_data)
             pred = output.argmax(dim=1)
@@ -63,34 +68,40 @@ def node_test():
 def freeze_model_parameters(model):
     for param in model.parameters():
         param.requires_grad = False
-def edge_train():
+
+def edge_train_and_test():
     freeze_model_parameters(node_model)
     for epoch in range(args.epochs):
-        edge_model.train()
-        LOSS = 0
-        for batch_data in tarin_dataloader:
-            edge_optimizer.zero_grad()
-            batch_data = batch_data.to(device)
-            unique_batch_indices = torch.unique(batch_data.batch)
-            for batch_index in unique_batch_indices:
-                subgraph = batch_data.get_example(batch_index)
-                node_embedding, node_output = node_model(subgraph)
-                # node_embedding = subgraph.x.to(device)
-                node_pred = node_output.argmax(dim=1)
-                node_type_pred_emb = tokenizer.node_type_emb[node_pred]
-                edge_output = edge_model(node_embedding, subgraph, node_type_pred_emb)
-                # edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
-                edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
-                loss = edge_criterion(edge_output, edge_y)
-                LOSS += loss.item()
-                loss.backward()
-                edge_optimizer.step()
-                # edge_scheduler.step()
-        print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
-        edge_test()
+        data_center.random_split()
+        tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
+        test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
+        edge_train(tarin_dataloader, epoch)
+        edge_test(test_dataloader)
 
-def edge_test():
-    freeze_model_parameters(node_model)
+def edge_train(tarin_dataloader, epoch):
+    edge_model.train()
+    LOSS = 0
+    for batch_data in tarin_dataloader:
+        edge_optimizer.zero_grad()
+        batch_data = batch_data.to(device)
+        unique_batch_indices = torch.unique(batch_data.batch)
+        for batch_index in unique_batch_indices:
+            subgraph = batch_data.get_example(batch_index)
+            node_embedding, node_output = node_model(subgraph)
+            # node_embedding = subgraph.x.to(device)
+            node_pred = node_output.argmax(dim=1)
+            node_type_pred_emb = tokenizer.node_type_emb[node_pred]
+            edge_output = edge_model(node_embedding, subgraph, node_type_pred_emb)
+            # edge_y = subgraph.raw_data.edge_y.to_dense().view(-1).to(device)
+            edge_y = torch.tensor(subgraph.edge_y.toarray(), dtype=torch.long).view(-1).to(device)
+            loss = edge_criterion(edge_output, edge_y)
+            LOSS += loss.item()
+            loss.backward()
+            edge_optimizer.step()
+            # edge_scheduler.step()
+    print(f'device: {device}, Epoch {epoch+1}/{args.epochs}, Train Loss: {(LOSS/len(tarin_dataloader))}')
+
+def edge_test(test_dataloader):
     edge_model.eval()
     with torch.no_grad():
         edge_correct_pred_num = 0
@@ -99,7 +110,7 @@ def edge_test():
         edge_num = 0
         positive_edge_num = 0
         negative_edge_num = 0
-        for batch_data in tarin_dataloader:
+        for batch_data in test_dataloader:
             batch_data = batch_data.to(device)
             unique_batch_indices = torch.unique(batch_data.batch)
             for batch_index in unique_batch_indices:
@@ -129,8 +140,8 @@ def edge_test():
         print(f'device: {device}, edge classification accuracy: {edge_accurcy}, positive edge classification accuracy: {positive_edge_accurcy}, negative edge classification accuracy: {negative_edge_accurcy}')
 
 if __name__ == '__main__':
-    node_train()
+    node_train_and_test()
     # torch.save(node_model, '/home/btr/bpmn/LLMEnG/src/node_model.pth')
-    edge_train()
+    edge_train_and_test()
     # ModelConfig.set_current_model("bert-large-uncased")
     # pass
