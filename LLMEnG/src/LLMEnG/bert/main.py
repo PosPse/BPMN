@@ -6,6 +6,7 @@ import torch
 import Parser as Parser
 import math
 
+
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
 tokenizer = Tokenizer(llm_model=args.llm_model, device=device)

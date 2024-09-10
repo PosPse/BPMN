@@ -17,7 +17,7 @@ parser.add_argument("--fusion_method", type=str, default="concat", choices=['con
 parser.add_argument("--hidden_size", type=int, default="128", help="隐藏层大小")
 parser.add_argument("--aggr", type=str, default="mean", choices=['mean', 'lstm'], help="GraphSAGE聚合函数")
 parser.add_argument("--lr", type=float, default="0.01", help="学习率")
-parser.add_argument("--epochs", type=int, default="150", help="训练轮数")
+parser.add_argument("--epochs", type=int, default="180", help="训练轮数")
 
 # token embedding
 parser.add_argument("--llm_model", type=str, default="/home/user/baitianrui/bpmn/model/safetensors/bert-base-uncased", help="LLM模型路径")
@@ -25,7 +25,7 @@ parser.add_argument("--the_way_of_emb_new_token", type=str, default="mean", choi
 parser.add_argument("--the_way_of_token_emb", type=str, default="sum", choices=['cls'], help="token嵌入的获取方式: cls(使用CLS作为token嵌入) | mean(使用最后一层模型输出，求平均) | pooler_output(bert模型的输出)")
 
 # 方法
-parser.add_argument("--method", type=str, default="none", choices=['none', 'add', 'del', 'add_del'], help="edge_index构建方法: none | add | del | add_del")
-parser.add_argument("--add_scale", type=float, default="0.2", help="add方法的比例")
-parser.add_argument("--del_scale", type=float, default="0.2", help="del方法的比例")
+parser.add_argument("--method", type=str, default="add_del", choices=['none', 'add', 'del', 'add_del'], help="edge_index构建方法: none | add | del | add_del")
+parser.add_argument("--add_scale", type=float, default="0.5", help="add方法的比例")
+parser.add_argument("--del_scale", type=float, default="0.5", help="del方法的比例")
 args = parser.parse_args()

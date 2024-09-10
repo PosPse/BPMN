@@ -1,6 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "/home/btr/bpmn/rust/hello/Cargo.toml",
+        "/home/user/baitianrui/bpmn/rust/hello/Cargo.toml",
     ],
     "svgPreview.style": {
     "html": {

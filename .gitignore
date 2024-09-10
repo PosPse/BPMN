@@ -8,6 +8,7 @@
 .idea/
 rust/
 go/
+code/
 whale-quant/
 regen-main/
 RL4LMs-main/
