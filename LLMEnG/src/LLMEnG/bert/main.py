@@ -6,12 +6,11 @@ import torch
 import Parser as Parser
 import math
 
-
 args = Parser.args
 device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
 tokenizer = Tokenizer(llm_model=args.llm_model, device=device)
 data_center = DataCenter(datasets_json=args.datasets_json, tokenizer=tokenizer, method=args.method, add_scale=args.add_scale, del_scale=args.del_scale)
-
+data_center.random_split()
 # node_model = GCN(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
 node_model = GraphSage(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes, aggr=args.aggr).to(device)
 # node_model = GAT(hidden_size=args.hidden_size, node_num_classes=args.node_num_classes).to(device)
@@ -34,7 +33,7 @@ edge_criterion = FocalLossWithCrossEntropy(device=device, alpha=weight, gamma=2,
 
 def node_train_and_test():
     for epoch in range(args.epochs):
-        data_center.random_split()
+        # data_center.random_split()
         tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
         test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
         node_train(tarin_dataloader, epoch)
@@ -73,7 +72,7 @@ def freeze_model_parameters(model):
 def edge_train_and_test():
     freeze_model_parameters(node_model)
     for epoch in range(args.epochs):
-        data_center.random_split()
+        # data_center.random_split()
         tarin_dataloader = data_center.get_train_dataloader(args.batch_size, args.shuffle)
         test_dataloader = data_center.get_test_dataloader(args.batch_size, args.shuffle)
         edge_train(tarin_dataloader, epoch)

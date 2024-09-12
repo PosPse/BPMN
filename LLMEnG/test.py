@@ -74,3 +74,4 @@
 # # 输出结果
 # print(output.shape)  # 应该是 (batch_size, feature_dim)
 print(111)
+a = [1,3,4]

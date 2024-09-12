@@ -25,7 +25,7 @@ parser.add_argument("--the_way_of_emb_new_token", type=str, default="mean", choi
 parser.add_argument("--the_way_of_token_emb", type=str, default="sum", choices=['cls'], help="token嵌入的获取方式: cls(使用CLS作为token嵌入) | mean(使用最后一层模型输出，求平均) | pooler_output(bert模型的输出)")
 
 # 方法
-parser.add_argument("--method", type=str, default="add_del", choices=['none', 'add', 'del', 'add_del'], help="edge_index构建方法: none | add | del | add_del")
-parser.add_argument("--add_scale", type=float, default="0.5", help="add方法的比例")
-parser.add_argument("--del_scale", type=float, default="0.5", help="del方法的比例")
+parser.add_argument("--method", type=str, default="add", choices=['none', 'add', 'del', 'add_del'], help="edge_index构建方法: none | add | del | add_del")
+parser.add_argument("--add_scale", type=float, default="0.1", help="add方法的比例")
+parser.add_argument("--del_scale", type=float, default="0.1", help="del方法的比例")
 args = parser.parse_args()

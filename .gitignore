@@ -7,7 +7,7 @@
 *.pyc
 .idea/
 rust/
-go/
+rgo/
 code/
 whale-quant/
 regen-main/
